@@ -110,10 +110,15 @@ function getOldestLiveRequestTimeOrigin(): number {
 // How far back a request's debugStartTime may claim the request started,
 // relative to when the request is actually created. This bounds how much
 // history we need to keep reachable for requests that don't exist yet.
-const MAX_REQUEST_START_LAG = 5000;
+let maxRequestStartLag = 5000;
+
+// Lets tests exercise history expiration without waiting out the real lag.
+export function setMaxRequestStartLagForTests(lag: number): void {
+  maxRequestStartLag = lag;
+}
 
 // Recently created nodes, in creation order, waiting for their history links
-// to expire. This intentionally retains the last MAX_REQUEST_START_LAG worth
+// to expire. This intentionally retains the last maxRequestStartLag worth
 // of nodes so a new request can still reach back that far.
 const agingOperations: Array<AsyncSequence> =
   __DEV__ && enableAsyncDebugInfo ? [] : (null as any);
@@ -137,7 +142,7 @@ function trackAgingOperation(node: AsyncSequence): void {
 // resolved outside of any request (e.g. a long-lived event loop in dev).
 function sweepAgingOperations(): void {
   operationsSinceSweep = 0;
-  const horizon = performance.now() - MAX_REQUEST_START_LAG;
+  const horizon = performance.now() - maxRequestStartLag;
   const oldestLiveRequest = getOldestLiveRequestTimeOrigin();
   const cutoff = oldestLiveRequest < horizon ? oldestLiveRequest : horizon;
   while (agingHead < agingOperations.length) {
@@ -224,6 +229,29 @@ function beforeExecution(node: AsyncSequence): void {
 
 const emptyStack: ReactStackTrace = [];
 
+// Parse a stack captured inside a V8 promise hook callback. The frame for the
+// callback itself is always on top but the dispatch below it is not a fixed
+// depth: Node's promise hook mux adds an initAll frame only when more than
+// one hook is registered. Drop dispatch frames by module instead of assuming
+// a depth. Only that module is dropped: an await can legitimately sit inside
+// other node internals and those frames decide that it wasn't in user space.
+function parsePromiseHookStackTrace(error: Error): null | ReactStackTrace {
+  const stack = parseStackTracePrivate(error, 1);
+  if (stack !== null) {
+    let firstFrame = 0;
+    while (
+      firstFrame < stack.length &&
+      stack[firstFrame][1] === 'node:internal/promise_hooks'
+    ) {
+      firstFrame++;
+    }
+    if (firstFrame > 0) {
+      stack.splice(0, firstFrame);
+    }
+  }
+  return stack;
+}
+
 // Initialize the tracing of async operations.
 // We do this globally since the async work can potentially eagerly
 // start before the first request and once requests start they can interleave.
@@ -272,7 +300,7 @@ export function initAsyncDebugInfo(): void {
               if (request === null) {
                 // We don't collect stacks for awaits that weren't in the scope of a specific render.
               } else {
-                stack = parseStackTracePrivate(new Error(), 2);
+                stack = parsePromiseHookStackTrace(new Error());
                 if (stack !== null && !isAwaitInUserspace(request, stack)) {
                   // If this await was not done directly in user space, then clear the stack. We won't use it
                   // anyway. This lets future awaits on this await know that we still need to get their stacks
@@ -299,7 +327,7 @@ export function initAsyncDebugInfo(): void {
               tag: UNRESOLVED_PROMISE_NODE,
               owner: owner,
               stack:
-                owner === null ? null : parseStackTracePrivate(new Error(), 2),
+                owner === null ? null : parsePromiseHookStackTrace(new Error()),
               start: performance.now(),
               end: -1.1, // Set when we resolve.
               promise: new WeakRef(promise),

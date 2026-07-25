@@ -4160,4 +4160,350 @@ describe('ReactFlightAsyncDebugInfo', () => {
       `);
     }
   });
+
+  it('keeps debug info intact when history expires during the render', async () => {
+    // The maxRequestStartLag override has to come from the same module
+    // registry as the server modules, so redo the setup from beforeEach with
+    // the override applied before anything renders.
+    jest.resetModules();
+    jest.mock('react', () => require('react/react.react-server'));
+    jest.mock('react-server-dom-webpack/server', () =>
+      jest.requireActual('react-server-dom-webpack/server.node'),
+    );
+    ReactServer = require('react');
+    ReactServerDOMServer = require('react-server-dom-webpack/server');
+    cache = ReactServer.cache;
+    // Age tracked operations immediately so that the expiration sweep severs
+    // every link that no live request can reach while this render is still
+    // running. Anything the render itself can still emit must survive.
+    require('react-server/src/ReactFlightServerConfigDebugNode').setMaxRequestStartLagForTests(
+      0,
+    );
+
+    jest.resetModules();
+    __unmockReact();
+    jest.unmock('react-server-dom-webpack/server');
+    jest.mock('react-server-dom-webpack/client', () =>
+      jest.requireActual('react-server-dom-webpack/client.node'),
+    );
+    React = require('react');
+    ReactServerDOMClient = require('react-server-dom-webpack/client');
+
+    const getData = cache(async function getData(text) {
+      await delay(1);
+      return text.toUpperCase();
+    });
+
+    async function Child() {
+      const greeting = await getData('hi');
+      return greeting + ', Seb';
+    }
+
+    async function Component() {
+      await getData('hi');
+      // Enough churn to run several expiration sweeps (they run every 128
+      // tracked operations) before the cached entry is awaited again.
+      for (let i = 0; i < 500; i++) {
+        await Promise.resolve(i);
+      }
+      return <Child />;
+    }
+
+    const stream = ReactServerDOMServer.renderToPipeableStream(
+      <Component />,
+      {},
+      {
+        filterStackFrame,
+      },
+    );
+
+    const readable = new Stream.PassThrough(streamOptions);
+
+    const result = ReactServerDOMClient.createFromNodeStream(readable, {
+      moduleMap: {},
+      moduleLoading: {},
+    });
+    stream.pipe(readable);
+
+    expect(await result).toBe('HI, Seb');
+
+    await finishLoadingStream(readable);
+    if (
+      __DEV__ &&
+      gate(
+        flags =>
+          flags.enableComponentPerformanceTrack && flags.enableAsyncDebugInfo,
+      )
+    ) {
+      expect(getDebugInfo(result)).toMatchInlineSnapshot(`
+        [
+          {
+            "time": 0,
+          },
+          {
+            "env": "Server",
+            "key": null,
+            "name": "Component",
+            "props": {},
+            "stack": [
+              [
+                "Object.<anonymous>",
+                "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                4213,
+                40,
+                4164,
+                72,
+              ],
+              [
+                "new Promise",
+                "",
+                0,
+                0,
+                0,
+                0,
+              ],
+            ],
+          },
+          {
+            "time": 0,
+          },
+          {
+            "awaited": {
+              "end": 0,
+              "env": "Server",
+              "name": "delay",
+              "owner": {
+                "env": "Server",
+                "key": null,
+                "name": "Component",
+                "props": {},
+                "stack": [
+                  [
+                    "Object.<anonymous>",
+                    "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                    4213,
+                    40,
+                    4164,
+                    72,
+                  ],
+                  [
+                    "new Promise",
+                    "",
+                    0,
+                    0,
+                    0,
+                    0,
+                  ],
+                ],
+              },
+              "stack": [
+                [
+                  "delay",
+                  "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                  87,
+                  12,
+                  86,
+                  3,
+                ],
+                [
+                  "getData",
+                  "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                  4193,
+                  13,
+                  4192,
+                  25,
+                ],
+                [
+                  "Component",
+                  "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                  4203,
+                  13,
+                  4202,
+                  5,
+                ],
+              ],
+              "start": 0,
+              "value": {
+                "value": undefined,
+              },
+            },
+            "env": "Server",
+            "owner": {
+              "env": "Server",
+              "key": null,
+              "name": "Component",
+              "props": {},
+              "stack": [
+                [
+                  "Object.<anonymous>",
+                  "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                  4213,
+                  40,
+                  4164,
+                  72,
+                ],
+                [
+                  "new Promise",
+                  "",
+                  0,
+                  0,
+                  0,
+                  0,
+                ],
+              ],
+            },
+            "stack": [
+              [
+                "getData",
+                "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                4193,
+                13,
+                4192,
+                25,
+              ],
+              [
+                "Component",
+                "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                4203,
+                13,
+                4202,
+                5,
+              ],
+            ],
+          },
+          {
+            "time": 0,
+          },
+          {
+            "time": 0,
+          },
+          {
+            "env": "Server",
+            "key": null,
+            "name": "Child",
+            "props": {},
+            "stack": [
+              [
+                "Component",
+                "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                4209,
+                60,
+                4202,
+                5,
+              ],
+            ],
+          },
+          {
+            "time": 0,
+          },
+          {
+            "awaited": {
+              "end": 0,
+              "env": "Server",
+              "name": "delay",
+              "owner": {
+                "env": "Server",
+                "key": null,
+                "name": "Component",
+                "props": {},
+                "stack": [
+                  [
+                    "Object.<anonymous>",
+                    "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                    4213,
+                    40,
+                    4164,
+                    72,
+                  ],
+                  [
+                    "new Promise",
+                    "",
+                    0,
+                    0,
+                    0,
+                    0,
+                  ],
+                ],
+              },
+              "stack": [
+                [
+                  "delay",
+                  "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                  87,
+                  12,
+                  86,
+                  3,
+                ],
+                [
+                  "getData",
+                  "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                  4193,
+                  13,
+                  4192,
+                  25,
+                ],
+                [
+                  "Component",
+                  "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                  4203,
+                  13,
+                  4202,
+                  5,
+                ],
+              ],
+              "start": 0,
+              "value": {
+                "value": undefined,
+              },
+            },
+            "env": "Server",
+            "owner": {
+              "env": "Server",
+              "key": null,
+              "name": "Child",
+              "props": {},
+              "stack": [
+                [
+                  "Component",
+                  "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                  4209,
+                  60,
+                  4202,
+                  5,
+                ],
+              ],
+            },
+            "stack": [
+              [
+                "Child",
+                "/packages/react-server/src/__tests__/ReactFlightAsyncDebugInfo-test.js",
+                4198,
+                28,
+                4197,
+                5,
+              ],
+            ],
+          },
+          {
+            "time": 0,
+          },
+          {
+            "time": 0,
+          },
+          {
+            "awaited": {
+              "byteSize": 0,
+              "end": 0,
+              "name": "rsc stream",
+              "owner": null,
+              "start": 0,
+              "value": {
+                "value": "stream",
+              },
+            },
+          },
+        ]
+      `);
+    }
+  });
 });
