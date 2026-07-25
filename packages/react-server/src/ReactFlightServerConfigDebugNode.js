@@ -54,6 +54,32 @@ function resolvePromiseOrAwaitNode(
 
 const emptyStack: ReactStackTrace = [];
 
+// Stacks captured inside a hook callback have the callback's own frame on
+// top, followed by the dispatch frames of the hook infrastructure. The
+// dispatch is not a fixed depth (e.g. Node's promise hook mux only adds a
+// frame when more than one hook is registered in the process) so instead of
+// skipping a fixed count we skip our own frame and then drop leading frames
+// that belong to the hook dispatch modules. Only those modules are dropped:
+// a hook can legitimately fire from inside other node internals and those
+// frames are what classifies an await as not being in user space.
+function parseHookStackTrace(error: Error): null | ReactStackTrace {
+  const stack = parseStackTracePrivate(error, 1);
+  if (stack !== null) {
+    let firstFrame = 0;
+    while (
+      firstFrame < stack.length &&
+      (stack[firstFrame][1] === 'node:internal/async_hooks' ||
+        stack[firstFrame][1] === 'node:internal/promise_hooks')
+    ) {
+      firstFrame++;
+    }
+    if (firstFrame > 0) {
+      stack.splice(0, firstFrame);
+    }
+  }
+  return stack;
+}
+
 // Initialize the tracing of async operations.
 // We do this globally since the async work can potentially eagerly
 // start before the first request and once requests start they can interleave.
@@ -104,7 +130,7 @@ export function initAsyncDebugInfo(): void {
               if (request === null) {
                 // We don't collect stacks for awaits that weren't in the scope of a specific render.
               } else {
-                stack = parseStackTracePrivate(new Error(), 5);
+                stack = parseHookStackTrace(new Error());
                 if (stack !== null && !isAwaitInUserspace(request, stack)) {
                   // If this await was not done directly in user space, then clear the stack. We won't use it
                   // anyway. This lets future awaits on this await know that we still need to get their stacks
@@ -129,8 +155,7 @@ export function initAsyncDebugInfo(): void {
             node = {
               tag: UNRESOLVED_PROMISE_NODE,
               owner: owner,
-              stack:
-                owner === null ? null : parseStackTracePrivate(new Error(), 5),
+              stack: owner === null ? null : parseHookStackTrace(new Error()),
               start: performance.now(),
               end: -1.1, // Set when we resolve.
               promise: new WeakRef(resource as Promise<any>),
@@ -170,8 +195,7 @@ export function initAsyncDebugInfo(): void {
             node = {
               tag: IO_NODE,
               owner: owner,
-              stack:
-                owner === null ? parseStackTracePrivate(new Error(), 3) : null,
+              stack: owner === null ? parseHookStackTrace(new Error()) : null,
               start: performance.now(),
               end: -1.1, // Only set when pinged.
               promise: null,
@@ -187,8 +211,7 @@ export function initAsyncDebugInfo(): void {
             node = {
               tag: IO_NODE,
               owner: owner,
-              stack:
-                owner === null ? parseStackTracePrivate(new Error(), 3) : null,
+              stack: owner === null ? parseHookStackTrace(new Error()) : null,
               start: performance.now(),
               end: -1.1, // Only set when pinged.
               promise: null,
