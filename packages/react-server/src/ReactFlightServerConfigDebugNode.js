@@ -41,7 +41,10 @@ enableAsyncDebugInfo
   ? new WeakMap()
   : (null as any);
 
-const pendingOperations: Map<number, AsyncSequence> =
+// Non-Promise resources (timers, sockets, file handles, tick/microtask
+// continuations) only expose integer ids through async_hooks so those are
+// tracked by id and pruned by the destroy hook.
+const pendingResourceOperations: Map<number, AsyncSequence> =
   __DEV__ && enableAsyncDebugInfo ? new Map() : (null as any);
 
 // The stack of Promises whose continuations are currently executing.
@@ -71,7 +74,7 @@ function getCurrentOperation(): void | AsyncSequence {
   if (executingPromises.length > 0) {
     return pendingPromises.get(executingPromises[executingPromises.length - 1]);
   }
-  return pendingOperations.get(executionAsyncId());
+  return pendingResourceOperations.get(executionAsyncId());
 }
 
 function createAwaitNode(
@@ -350,7 +353,7 @@ export function initAsyncDebugInfo(): void {
           trigger = getCurrentOperation();
         } else {
           // Spawned by another resource, such as a connection on a server handle.
-          trigger = pendingOperations.get(triggerAsyncId);
+          trigger = pendingResourceOperations.get(triggerAsyncId);
         }
         let node: AsyncSequence;
         if (
@@ -412,10 +415,10 @@ export function initAsyncDebugInfo(): void {
             node = trigger;
           }
         }
-        pendingOperations.set(asyncId, node);
+        pendingResourceOperations.set(asyncId, node);
       },
       before(asyncId: number): void {
-        const node = pendingOperations.get(asyncId);
+        const node = pendingResourceOperations.get(asyncId);
         if (node !== undefined) {
           if (node.tag === IO_NODE) {
             lastRanAwait = null;
@@ -440,7 +443,7 @@ export function initAsyncDebugInfo(): void {
                 awaited: ioNode.awaited,
                 previous: ioNode.previous,
               };
-              pendingOperations.set(asyncId, clonedNode);
+              pendingResourceOperations.set(asyncId, clonedNode);
             }
           } else {
             beforeExecution(node);
@@ -451,7 +454,7 @@ export function initAsyncDebugInfo(): void {
       destroy(asyncId: number): void {
         // If we needed the meta data from this operation we should have already
         // extracted it or it should be part of a chain of triggers.
-        pendingOperations.delete(asyncId);
+        pendingResourceOperations.delete(asyncId);
       },
     }).enable();
   }
@@ -465,7 +468,7 @@ export function markAsyncSequenceRootTask(): void {
     if (executingPromises.length > 0) {
       pendingPromises.delete(executingPromises[executingPromises.length - 1]);
     } else {
-      pendingOperations.delete(executionAsyncId());
+      pendingResourceOperations.delete(executionAsyncId());
     }
   }
 }
