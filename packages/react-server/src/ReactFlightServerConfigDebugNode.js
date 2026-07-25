@@ -25,20 +25,143 @@ import {
   AWAIT_NODE,
   UNRESOLVED_AWAIT_NODE,
 } from './ReactFlightAsyncSequence';
+import type {Request} from './ReactFlightServer';
+
 import {resolveOwner} from './flight/ReactFlightCurrentOwner';
-import {resolveRequest, isAwaitInUserspace} from './ReactFlightServer';
-import {createHook, executionAsyncId, AsyncResource} from 'async_hooks';
+import {
+  resolveRequest,
+  isAwaitInUserspace,
+  isRequestClosed,
+} from './ReactFlightServer';
+import {createHook, executionAsyncId} from 'async_hooks';
+import {promiseHooks} from 'v8';
 import {enableAsyncDebugInfo} from 'shared/ReactFeatureFlags';
 import {parseStackTracePrivate} from './ReactFlightServerConfig';
 
-// $FlowFixMe[method-unbinding]
-const getAsyncId = AsyncResource.prototype.asyncId;
+// Promises are tracked by the Promise instance itself using V8's promise hooks
+// which pass us the instances directly. This way a tracking node lives exactly
+// as long as the Promise it describes is still reachable, without us having to
+// observe when the Promise is garbage collected.
+const pendingPromises: WeakMap<Promise<any>, AsyncSequence> = __DEV__ &&
+enableAsyncDebugInfo
+  ? new WeakMap()
+  : (null as any);
 
-const pendingOperations: Map<number, AsyncSequence> =
+// Non-Promise resources (timers, sockets, file handles, tick/microtask
+// continuations) only expose integer ids through async_hooks so those are
+// tracked by id, pruned when the resource is garbage collected.
+const pendingResourceOperations: Map<number, AsyncSequence> =
   __DEV__ && enableAsyncDebugInfo ? new Map() : (null as any);
+
+// We intentionally don't use the async_hooks destroy hook to prune the map.
+// Destroy hooks are counted globally in Node.js and as soon as one exists,
+// every Promise in the process gets its own GC-tracked destroy registration,
+// which is the expensive per-Promise overhead this file otherwise avoids.
+// Instead we observe the collection of the resource object itself. Resources
+// are passed to init so this tracks the actual handle, not just an id.
+const pendingResourceRegistry: FinalizationRegistry<number> =
+  __DEV__ && enableAsyncDebugInfo
+    ? new FinalizationRegistry(asyncId => {
+        pendingResourceOperations.delete(asyncId);
+      })
+    : (null as any);
+
+// Pooled resources (e.g. HTTPPARSER) are inited with a new id on each reuse
+// but only collected when the pool releases them. Tracking the last id per
+// resource lets a reuse prune the previous use's entry, so a pooled resource
+// holds at most one entry at a time.
+const lastResourceId: WeakMap<any, number> =
+  __DEV__ && enableAsyncDebugInfo ? new WeakMap() : (null as any);
+
+// The stack of Promises whose continuations are currently executing.
+// The equivalent of executionAsyncId() for the V8 promise hooks.
+const executingPromises: Array<Promise<any>> =
+  __DEV__ && enableAsyncDebugInfo ? [] : (null as any);
 
 // Keep the last resolved await as a workaround for async functions missing data.
 let lastRanAwait: null | AwaitNode = null;
+
+// The requests that might still consume async debug info. The oldest time
+// origin among these decides when a piece of history can no longer be reached
+// by any emit and can be released. Requests are held weakly so a request that
+// never formally closes still expires with GC.
+const liveRequests: Set<WeakRef<Request>> =
+  __DEV__ && enableAsyncDebugInfo ? new Set() : (null as any);
+
+export function markAsyncSequenceRequest(request: Request): void {
+  if (__DEV__ && enableAsyncDebugInfo) {
+    liveRequests.add(new WeakRef(request));
+  }
+}
+
+function getOldestLiveRequestTimeOrigin(): number {
+  let oldest = Infinity;
+  liveRequests.forEach(requestRef => {
+    const request = requestRef.deref();
+    if (request === undefined || isRequestClosed(request)) {
+      liveRequests.delete(requestRef);
+    } else if (request.timeOrigin < oldest) {
+      oldest = request.timeOrigin;
+    }
+  });
+  return oldest;
+}
+
+// How far back a request's debugStartTime may claim the request started,
+// relative to when the request is actually created. This bounds how much
+// history we need to keep reachable for requests that don't exist yet.
+const MAX_REQUEST_START_LAG = 5000;
+
+// Recently created nodes, in creation order, waiting for their history links
+// to expire. This intentionally retains the last MAX_REQUEST_START_LAG worth
+// of nodes so a new request can still reach back that far.
+const agingOperations: Array<AsyncSequence> =
+  __DEV__ && enableAsyncDebugInfo ? [] : (null as any);
+let agingHead = 0;
+let operationsSinceSweep = 0;
+
+function trackAgingOperation(node: AsyncSequence): void {
+  agingOperations.push(node);
+  if (++operationsSinceSweep >= 128) {
+    sweepAgingOperations();
+  }
+}
+
+// A link to an already resolved node can only affect emitted debug info for a
+// request whose time origin predates that node's resolution: anything that
+// resolved before the request started is excluded from emits by
+// visitAsyncNodeImpl. So once no live request is old enough, and no future
+// request's debugStartTime can reach back far enough, the link can be severed
+// without changing any output. Severing it releases the history graph behind
+// it, which is what bounds memory when Promises keep being created and
+// resolved outside of any request (e.g. a long-lived event loop in dev).
+function sweepAgingOperations(): void {
+  operationsSinceSweep = 0;
+  const horizon = performance.now() - MAX_REQUEST_START_LAG;
+  const oldestLiveRequest = getOldestLiveRequestTimeOrigin();
+  const cutoff = oldestLiveRequest < horizon ? oldestLiveRequest : horizon;
+  while (agingHead < agingOperations.length) {
+    const node = agingOperations[agingHead];
+    if (node.start >= horizon) {
+      // Everything from here on was created too recently. A request created
+      // right now could still claim a start time that reaches back to it.
+      break;
+    }
+    agingHead++;
+    const awaited = node.awaited;
+    if (awaited !== null && awaited.end >= 0 && awaited.end < cutoff) {
+      (node as any).awaited = null;
+    }
+    const previous = node.previous;
+    if (previous !== null && previous.end >= 0 && previous.end < cutoff) {
+      (node as any).previous = null;
+    }
+  }
+  if (agingHead > 1024 && agingHead * 2 >= agingOperations.length) {
+    agingOperations.splice(0, agingHead);
+    agingHead = 0;
+  }
+}
 
 function resolvePromiseOrAwaitNode(
   unresolvedNode: UnresolvedAwaitNode | UnresolvedPromiseNode,
@@ -52,6 +175,53 @@ function resolvePromiseOrAwaitNode(
   return resolvedNode;
 }
 
+function getCurrentOperation(): void | AsyncSequence {
+  // If we're executing within a Promise continuation, that Promise is the
+  // current execution context. Otherwise, we're in a non-Promise resource's
+  // callback (e.g. a timer or socket) tracked by async_hooks.
+  if (executingPromises.length > 0) {
+    return pendingPromises.get(executingPromises[executingPromises.length - 1]);
+  }
+  return pendingResourceOperations.get(executionAsyncId());
+}
+
+// Shared between the async_hooks before hook (non-Promise resources and
+// continuations that carry along a Promise node) and the V8 promise hooks
+// before hook.
+function beforeExecution(node: AsyncSequence): void {
+  switch (node.tag) {
+    case UNRESOLVED_AWAIT_NODE: {
+      // If we begin before we resolve, that means that this is actually already resolved but
+      // the settled hook is called at the end of the execution. So we track the time
+      // in the before call instead.
+      // $FlowFixMe[incompatible-type]
+      lastRanAwait = resolvePromiseOrAwaitNode(node, performance.now());
+      break;
+    }
+    case AWAIT_NODE: {
+      lastRanAwait = node;
+      break;
+    }
+    case UNRESOLVED_PROMISE_NODE: {
+      // We typically don't expected Promises to have an execution scope since only the awaits
+      // have a then() callback. However, this can happen for native async functions. The last
+      // piece of code that executes the return after the last await has the execution context
+      // of the Promise.
+      const resolvedNode = resolvePromiseOrAwaitNode(node, performance.now());
+      // We are missing information about what this was unblocked by but we can guess that it
+      // was whatever await we ran last since this will continue in a microtask after that.
+      // This is not perfect because there could potentially be other microtasks getting in
+      // between.
+      resolvedNode.previous = lastRanAwait;
+      lastRanAwait = null;
+      break;
+    }
+    default: {
+      lastRanAwait = null;
+    }
+  }
+}
+
 const emptyStack: ReactStackTrace = [];
 
 // Initialize the tracing of async operations.
@@ -61,20 +231,18 @@ const emptyStack: ReactStackTrace = [];
 // but given that typically this is just a live server, it doesn't really matter.
 export function initAsyncDebugInfo(): void {
   if (__DEV__ && enableAsyncDebugInfo) {
-    createHook({
-      init(
-        asyncId: number,
-        type: string,
-        triggerAsyncId: number,
-        resource: any,
-      ): void {
-        const trigger = pendingOperations.get(triggerAsyncId);
-        let node: AsyncSequence;
-        if (type === 'PROMISE') {
-          const currentAsyncId = executionAsyncId();
-          if (currentAsyncId !== triggerAsyncId) {
+    if (promiseHooks == null) {
+      // This is not a V8 runtime. Async debug info is not supported.
+      return;
+    }
+    try {
+      promiseHooks.createHook({
+        init(promise: Promise<any>, parent: void | Promise<any>): void {
+          let node: AsyncSequence;
+          if (parent !== undefined) {
             // When you call .then() on a native Promise, or await/Promise.all() a thenable,
-            // then this intermediate Promise is created. We use this as our await point
+            // then this intermediate Promise is created. We use this as our await point.
+            const trigger = pendingPromises.get(parent);
             if (trigger === undefined) {
               // We don't track awaits on things that started outside our tracked scope.
               return;
@@ -91,20 +259,20 @@ export function initAsyncDebugInfo(): void {
               // We already had a stack for an await. In a chain of awaits we'll only need one good stack.
               // We mark it with an empty stack to signal to any await on this await that we have a stack.
               stack = emptyStack;
-              if (resource._debugInfo !== undefined) {
+              if ((promise as any)._debugInfo !== undefined) {
                 // We may need to forward this debug info at the end so we need to retain this promise.
-                promiseRef = new WeakRef(resource as Promise<any>);
+                promiseRef = new WeakRef(promise);
               } else {
                 // Otherwise, we can just refer to the inner one since that's the one we'll log anyway.
                 promiseRef = trigger.promise;
               }
             } else {
-              promiseRef = new WeakRef(resource as Promise<any>);
+              promiseRef = new WeakRef(promise);
               const request = resolveRequest();
               if (request === null) {
                 // We don't collect stacks for awaits that weren't in the scope of a specific render.
               } else {
-                stack = parseStackTracePrivate(new Error(), 5);
+                stack = parseStackTracePrivate(new Error(), 2);
                 if (stack !== null && !isAwaitInUserspace(request, stack)) {
                   // If this await was not done directly in user space, then clear the stack. We won't use it
                   // anyway. This lets future awaits on this await know that we still need to get their stacks
@@ -113,7 +281,7 @@ export function initAsyncDebugInfo(): void {
                 }
               }
             }
-            const current = pendingOperations.get(currentAsyncId);
+            const current = getCurrentOperation();
             node = {
               tag: UNRESOLVED_AWAIT_NODE,
               owner: resolveOwner(),
@@ -125,15 +293,16 @@ export function initAsyncDebugInfo(): void {
               previous: current === undefined ? null : current, // The path that led us here.
             } as UnresolvedAwaitNode;
           } else {
+            const trigger = getCurrentOperation();
             const owner = resolveOwner();
             node = {
               tag: UNRESOLVED_PROMISE_NODE,
               owner: owner,
               stack:
-                owner === null ? null : parseStackTracePrivate(new Error(), 5),
+                owner === null ? null : parseStackTracePrivate(new Error(), 2),
               start: performance.now(),
               end: -1.1, // Set when we resolve.
-              promise: new WeakRef(resource as Promise<any>),
+              promise: new WeakRef(promise),
               awaited:
                 trigger === undefined
                   ? null // It might get overridden when we resolve.
@@ -141,7 +310,123 @@ export function initAsyncDebugInfo(): void {
               previous: null,
             } as UnresolvedPromiseNode;
           }
-        } else if (
+          pendingPromises.set(promise, node);
+          trackAgingOperation(node);
+        },
+        before(promise: Promise<any>): void {
+          executingPromises.push(promise);
+          const node = pendingPromises.get(promise);
+          if (node !== undefined) {
+            beforeExecution(node);
+          }
+        },
+        after(promise: Promise<any>): void {
+          // Normally the top of the stack but we scan defensively in case an
+          // unwind was not observed.
+          for (let i = executingPromises.length - 1; i >= 0; i--) {
+            if (executingPromises[i] === promise) {
+              executingPromises.length = i;
+              return;
+            }
+          }
+        },
+        settled(promise: Promise<any>): void {
+          const node = pendingPromises.get(promise);
+          if (node !== undefined) {
+            let resolvedNode: AwaitNode | PromiseNode;
+            switch (node.tag) {
+              case UNRESOLVED_AWAIT_NODE:
+              case UNRESOLVED_PROMISE_NODE: {
+                resolvedNode = resolvePromiseOrAwaitNode(
+                  node,
+                  performance.now(),
+                );
+                break;
+              }
+              case AWAIT_NODE:
+              case PROMISE_NODE: {
+                // We already resolved this in the before hook.
+                resolvedNode = node;
+                break;
+              }
+              default:
+                // eslint-disable-next-line react-internal/prod-error-codes
+                throw new Error(
+                  'A Promise should never be an IO_NODE. This is a bug in React.',
+                );
+            }
+            const executingPromise =
+              executingPromises.length > 0
+                ? executingPromises[executingPromises.length - 1]
+                : null;
+            if (promise !== executingPromise) {
+              // If the promise was not resolved by itself, then that means that
+              // the trigger that we originally stored wasn't actually the dependency.
+              // Instead, the current execution context is what ultimately unblocked it.
+              const awaited = getCurrentOperation();
+              if (resolvedNode.tag === PROMISE_NODE) {
+                // For a Promise we just override the await. We're not interested in
+                // what created the Promise itself.
+                resolvedNode.awaited = awaited === undefined ? null : awaited;
+              } else {
+                // For an await, there's really two things awaited here. It's the trigger
+                // that .then() was called on but there seems to also be something else
+                // in the .then() callback that blocked the returned Promise from resolving
+                // immediately. We create a fork node which essentially represents an await
+                // of the Promise returned from the .then() callback. That Promise was blocked
+                // on the original awaited thing which we stored as "previous".
+                if (awaited !== undefined) {
+                  const clonedNode: AwaitNode = {
+                    tag: AWAIT_NODE,
+                    owner: resolvedNode.owner,
+                    stack: resolvedNode.stack,
+                    start: resolvedNode.start,
+                    end: resolvedNode.end,
+                    promise: resolvedNode.promise,
+                    awaited: resolvedNode.awaited,
+                    previous: resolvedNode.previous,
+                  };
+                  trackAgingOperation(clonedNode);
+                  // We started awaiting on the callback when the original .then() resolved.
+                  resolvedNode.start = resolvedNode.end;
+                  // It resolved now. We could use the end time of "awaited" maybe.
+                  resolvedNode.end = performance.now();
+                  resolvedNode.previous = clonedNode;
+                  resolvedNode.awaited = awaited;
+                }
+              }
+            }
+          }
+        },
+      });
+    } catch (x) {
+      // Some runtimes ship a v8 module whose promise hooks are not functional
+      // (e.g. Bun). Async debug info is not supported there.
+      return;
+    }
+    createHook({
+      init(
+        asyncId: number,
+        type: string,
+        triggerAsyncId: number,
+        resource: any,
+      ): void {
+        if (type === 'PROMISE') {
+          // Promises are tracked by the V8 promise hooks above which hand us
+          // the instances themselves rather than reducing them to ids.
+          return;
+        }
+        let trigger: void | AsyncSequence;
+        if (triggerAsyncId === executionAsyncId()) {
+          // Spawned by whatever we're currently executing, which may be a
+          // Promise continuation that async_hooks only knows by id.
+          trigger = getCurrentOperation();
+        } else {
+          // Spawned by another resource, such as a connection on a server handle.
+          trigger = pendingResourceOperations.get(triggerAsyncId);
+        }
+        let node: AsyncSequence;
+        if (
           // bound-anonymous-fn is the default name for snapshots and .bind() without a name.
           // This isn't I/O by itself but likely just a continuation. If the bound function
           // has a name, we might treat it as I/O but we can't tell the difference.
@@ -178,6 +463,7 @@ export function initAsyncDebugInfo(): void {
               awaited: null,
               previous: null,
             } as IONode;
+            trackAgingOperation(node);
           } else if (
             trigger.tag === AWAIT_NODE ||
             trigger.tag === UNRESOLVED_AWAIT_NODE
@@ -195,146 +481,55 @@ export function initAsyncDebugInfo(): void {
               awaited: null,
               previous: trigger,
             } as IONode;
+            trackAgingOperation(node);
           } else {
             // Otherwise, this is just a continuation of the same I/O sequence.
             node = trigger;
           }
         }
-        pendingOperations.set(asyncId, node);
+        const previousId = lastResourceId.get(resource);
+        if (previousId !== undefined) {
+          // This resource was reused from a pool. Its previous use is done.
+          pendingResourceOperations.delete(previousId);
+          pendingResourceRegistry.unregister(resource);
+        }
+        lastResourceId.set(resource, asyncId);
+        pendingResourceRegistry.register(resource, asyncId, resource);
+        pendingResourceOperations.set(asyncId, node);
       },
       before(asyncId: number): void {
-        const node = pendingOperations.get(asyncId);
+        const node = pendingResourceOperations.get(asyncId);
         if (node !== undefined) {
-          switch (node.tag) {
-            case IO_NODE: {
-              lastRanAwait = null;
-              // Log the end time when we resolved the I/O.
-              const ioNode: IONode = node as any;
-              if (ioNode.end < 0) {
-                ioNode.end = performance.now();
-              } else {
-                // This can happen more than once if it's a recurring resource like a connection.
-                // Even for single events like setTimeout, this can happen three times due to ticks
-                // and microtasks each running its own scope.
-                // To preserve each operation's separate end time, we create a clone of the IO node.
-                // Any pre-existing reference will refer to the first resolution and any new resolutions
-                // will refer to the new node.
-                const clonedNode: IONode = {
-                  tag: IO_NODE,
-                  owner: ioNode.owner,
-                  stack: ioNode.stack,
-                  start: ioNode.start,
-                  end: performance.now(),
-                  promise: ioNode.promise,
-                  awaited: ioNode.awaited,
-                  previous: ioNode.previous,
-                };
-                pendingOperations.set(asyncId, clonedNode);
-              }
-              break;
-            }
-            case UNRESOLVED_AWAIT_NODE: {
-              // If we begin before we resolve, that means that this is actually already resolved but
-              // the promiseResolve hook is called at the end of the execution. So we track the time
-              // in the before call instead.
-              // $FlowFixMe[incompatible-type]
-              lastRanAwait = resolvePromiseOrAwaitNode(node, performance.now());
-              break;
-            }
-            case AWAIT_NODE: {
-              lastRanAwait = node;
-              break;
-            }
-            case UNRESOLVED_PROMISE_NODE: {
-              // We typically don't expected Promises to have an execution scope since only the awaits
-              // have a then() callback. However, this can happen for native async functions. The last
-              // piece of code that executes the return after the last await has the execution context
-              // of the Promise.
-              const resolvedNode = resolvePromiseOrAwaitNode(
-                node,
-                performance.now(),
-              );
-              // We are missing information about what this was unblocked by but we can guess that it
-              // was whatever await we ran last since this will continue in a microtask after that.
-              // This is not perfect because there could potentially be other microtasks getting in
-              // between.
-              resolvedNode.previous = lastRanAwait;
-              lastRanAwait = null;
-              break;
-            }
-            default: {
-              lastRanAwait = null;
-            }
-          }
-        }
-      },
-
-      promiseResolve(asyncId: number): void {
-        const node = pendingOperations.get(asyncId);
-        if (node !== undefined) {
-          let resolvedNode: AwaitNode | PromiseNode;
-          switch (node.tag) {
-            case UNRESOLVED_AWAIT_NODE:
-            case UNRESOLVED_PROMISE_NODE: {
-              resolvedNode = resolvePromiseOrAwaitNode(node, performance.now());
-              break;
-            }
-            case AWAIT_NODE:
-            case PROMISE_NODE: {
-              // We already resolved this in the before hook.
-              resolvedNode = node;
-              break;
-            }
-            default:
-              // eslint-disable-next-line react-internal/prod-error-codes
-              throw new Error(
-                'A Promise should never be an IO_NODE. This is a bug in React.',
-              );
-          }
-          const currentAsyncId = executionAsyncId();
-          if (asyncId !== currentAsyncId) {
-            // If the promise was not resolved by itself, then that means that
-            // the trigger that we originally stored wasn't actually the dependency.
-            // Instead, the current execution context is what ultimately unblocked it.
-            const awaited = pendingOperations.get(currentAsyncId);
-            if (resolvedNode.tag === PROMISE_NODE) {
-              // For a Promise we just override the await. We're not interested in
-              // what created the Promise itself.
-              resolvedNode.awaited = awaited === undefined ? null : awaited;
+          if (node.tag === IO_NODE) {
+            lastRanAwait = null;
+            // Log the end time when we resolved the I/O.
+            const ioNode: IONode = node as any;
+            if (ioNode.end < 0) {
+              ioNode.end = performance.now();
             } else {
-              // For an await, there's really two things awaited here. It's the trigger
-              // that .then() was called on but there seems to also be something else
-              // in the .then() callback that blocked the returned Promise from resolving
-              // immediately. We create a fork node which essentially represents an await
-              // of the Promise returned from the .then() callback. That Promise was blocked
-              // on the original awaited thing which we stored as "previous".
-              if (awaited !== undefined) {
-                const clonedNode: AwaitNode = {
-                  tag: AWAIT_NODE,
-                  owner: resolvedNode.owner,
-                  stack: resolvedNode.stack,
-                  start: resolvedNode.start,
-                  end: resolvedNode.end,
-                  promise: resolvedNode.promise,
-                  awaited: resolvedNode.awaited,
-                  previous: resolvedNode.previous,
-                };
-                // We started awaiting on the callback when the original .then() resolved.
-                resolvedNode.start = resolvedNode.end;
-                // It resolved now. We could use the end time of "awaited" maybe.
-                resolvedNode.end = performance.now();
-                resolvedNode.previous = clonedNode;
-                resolvedNode.awaited = awaited;
-              }
+              // This can happen more than once if it's a recurring resource like a connection.
+              // Even for single events like setTimeout, this can happen three times due to ticks
+              // and microtasks each running its own scope.
+              // To preserve each operation's separate end time, we create a clone of the IO node.
+              // Any pre-existing reference will refer to the first resolution and any new resolutions
+              // will refer to the new node.
+              const clonedNode: IONode = {
+                tag: IO_NODE,
+                owner: ioNode.owner,
+                stack: ioNode.stack,
+                start: ioNode.start,
+                end: performance.now(),
+                promise: ioNode.promise,
+                awaited: ioNode.awaited,
+                previous: ioNode.previous,
+              };
+              trackAgingOperation(clonedNode);
+              pendingResourceOperations.set(asyncId, clonedNode);
             }
+          } else {
+            beforeExecution(node);
           }
         }
-      },
-
-      destroy(asyncId: number): void {
-        // If we needed the meta data from this operation we should have already
-        // extracted it or it should be part of a chain of triggers.
-        pendingOperations.delete(asyncId);
       },
     }).enable();
   }
@@ -345,7 +540,13 @@ export function markAsyncSequenceRootTask(): void {
     // Whatever Task we're running now is spawned by React itself to perform render work.
     // Don't track any cause beyond this task. We may still track I/O that was started outside
     // React but just not the cause of entering the render.
-    pendingOperations.delete(executionAsyncId());
+    if (executingPromises.length > 0) {
+      pendingPromises.delete(executingPromises[executingPromises.length - 1]);
+    } else {
+      pendingResourceOperations.delete(executionAsyncId());
+    }
+    // Renders are also a good time to release expired history.
+    sweepAgingOperations();
   }
 }
 
@@ -353,7 +554,7 @@ export function getCurrentAsyncSequence(): null | AsyncSequence {
   if (!__DEV__ || !enableAsyncDebugInfo) {
     return null;
   }
-  const currentNode = pendingOperations.get(executionAsyncId());
+  const currentNode = getCurrentOperation();
   if (currentNode === undefined) {
     // Nothing that we tracked led to the resolution of this execution context.
     return null;
@@ -367,20 +568,7 @@ export function getAsyncSequenceFromPromise(
   if (!__DEV__ || !enableAsyncDebugInfo) {
     return null;
   }
-  // A Promise is conceptually an AsyncResource but doesn't have its own methods.
-  // We use this hack to extract the internal asyncId off the Promise.
-  let asyncId: void | number;
-  try {
-    asyncId = getAsyncId.call(promise);
-  } catch (x) {
-    // Ignore errors extracting the ID. We treat it as missing.
-    // This could happen if our hack stops working or in the case where this is
-    // a Proxy that throws such as our own ClientReference proxies.
-  }
-  if (asyncId === undefined) {
-    return null;
-  }
-  const node = pendingOperations.get(asyncId);
+  const node = pendingPromises.get(promise);
   if (node === undefined) {
     return null;
   }
