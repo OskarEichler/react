@@ -91,10 +91,11 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
 
   jest.setTimeout(60000);
 
-  // Rejected awaited values are reconstructed as rejected chunks during
-  // stream processing, before any test code can attach a handler. Collect
-  // them instead of letting Node's default throw kill the process, but only
-  // tolerate the rejections the workload itself created.
+  // TODO: Remove this once the Flight client stops turning rejected awaited
+  // values into handler-less rejected chunks during stream processing. They
+  // reject before any test code can attach a handler, so Node's default
+  // unhandled-rejections mode would kill the process. Collect them instead,
+  // but only tolerate the rejections the workload itself created.
   let unhandled = [];
   const onUnhandled = reason => {
     unhandled.push(reason);
@@ -522,10 +523,10 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
     // re-executes everything before it deterministically.
     function makeSyncUseComponent() {
       const name = 'FuzzUse' + componentId++;
-      // Normalized through a native promise: use() instruments the thenable
-      // it receives, and a hostile thenable that settles more than once
-      // makes the debug channel emit twice for the same chunk. (Tracked
-      // separately; the graph behind the promise stays adversarial.)
+      // TODO: use() the raw node once hostile thenables survive it: use()
+      // instruments the thenable it receives, and one that settles more than
+      // once makes the debug channel emit twice for the same chunk. The
+      // graph behind the native promise stays adversarial in the meantime.
       const node = program.retain(Promise.resolve(program.genNode(2)));
       const Component = {
         [name]: function () {
@@ -560,6 +561,10 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
         }
       }
       const passPromiseProp = depth < 2 && rand.intBetween(0, 2) === 0;
+      // TODO: Pass the raw node once serializing a userland thenable that
+      // settles more than once no longer double-emits its row and crashes
+      // the Flight client (controller.enqueueModel is not a function).
+      // Promise.resolve() gives it settle-once semantics in the meantime.
       const propPromise = passPromiseProp
         ? program.retain(Promise.resolve(program.genNode(0)))
         : null;
