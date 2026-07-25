@@ -1,0 +1,2178 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 0) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+      [],
+    ],
+    "value": "[Fuzz0:sync3;t4;,[[object Object],[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 1) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "Object.readFile",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzRead (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "v3",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "Object.readFile",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzRead (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "v2",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in cachedFetch (at **)
+    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": "1",
+          "name": "FuzzUse3",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.map (at **)
+    in Fuzz0 (at **)",
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": undefined,
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": "1",
+            "name": "FuzzUse3",
+            "owner": {
+              "env": "Server",
+              "key": null,
+              "name": "Fuzz0",
+              "props": {},
+              "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+            },
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.map (at **)
+    in Fuzz0 (at **)",
+          },
+          "stack": "    in FuzzUse3 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz0:v3;deep;pool:2:v2,[[object Object],[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 2) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "reason": [Error: rejected v3],
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+    ],
+    "value": "[Fuzz0:caught:rejected v3;pool:0:v0,[[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 3) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "reason": [Error: rejected v3],
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "reason": [Error: rejected v3],
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz0:caught:rejected v3;sub4;,[]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 4) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "v3",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz0:sub5;v3;,[]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 5) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in global.setImmediate (at **)
+    in  (at **)
+    in new Promise (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": undefined,
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+    ],
+    "value": "[Fuzz0:p3;deep;,[[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 6) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+            "start": 0,
+            "value": {
+              "value": "v3",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz0:v3;,[]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 7) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in global.setImmediate (at **)
+    in  (at **)
+    in new Promise (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": undefined,
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz0:sub15;,[]]",
+  },
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz1",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "Object.readFile",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzRead (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "fulfilled;fulfilled;",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz1",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz1 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "rejected;fulfilled;",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz1",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz1 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+    ],
+    "value": "[Fuzz1:fulfilled;fulfilled;;rejected;fulfilled;;,[[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 8) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "p3",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "Object.readFile",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzRead (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "v0",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in cachedFetch (at **)
+    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": "0",
+          "name": "FuzzUse1",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.map (at **)
+    in Fuzz0 (at **)",
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": undefined,
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": "0",
+            "name": "FuzzUse1",
+            "owner": {
+              "env": "Server",
+              "key": null,
+              "name": "Fuzz0",
+              "props": {},
+              "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+            },
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.map (at **)
+    in Fuzz0 (at **)",
+          },
+          "stack": "    in FuzzUse1 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz0:p3;pool:0:v0,[[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 9) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "Object.readFile",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzRead (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": [
+                "deep|",
+                "fulfilled;fulfilled;",
+                [
+                  "t6",
+                  "rejected;fulfilled;",
+                ],
+              ],
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "v9",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz0:deep|,fulfilled;fulfilled;,t6,rejected;fulfilled;;v9;,[]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 10) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+            "start": 0,
+            "value": {
+              "reason": [Error: rejected v3],
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in global.setImmediate (at **)
+    in  (at **)
+    in new Promise (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": undefined,
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "v2",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in cachedFetch (at **)
+    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz0:caught:rejected v3;p4;pool:2:v2,[]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 11) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "Object.readFile",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzRead (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "reason": [Error: rejected v3],
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+      [],
+    ],
+    "value": "[Fuzz0:caught:rejected v3;,[[object Object],[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 12) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "v2",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in cachedFetch (at **)
+    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+    ],
+    "value": "[Fuzz0:sync3;pool:2:v2,[[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 13) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz0:sync3;,[]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 14) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "Object.readFile",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzRead (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "caught:rejected v3",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+    ],
+    "value": "[Fuzz0:caught:rejected v3;pool:0:v0,[[object Object]]]",
+  },
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz4",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "reason": [Error: rejected v10],
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz4",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz4 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+      [],
+    ],
+    "value": "[Fuzz4:caught:rejected v10;pool:0:v0,[[object Object],[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 15) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "fulfilled;fulfilled;",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in global.setImmediate (at **)
+    in  (at **)
+    in new Promise (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "p5",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+    ],
+    "value": "[Fuzz0:fulfilled;fulfilled;;p5;,[[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 16) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "Object.readFile",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzRead (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "reason": [Error: rejected v3],
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "Object.readFile",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzRead (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "p4|",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+    ],
+    "value": "[Fuzz0:caught:rejected v3;p4|;,[[object Object]]]",
+  },
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz2",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "deep",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz2",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz2 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in global.setImmediate (at **)
+    in  (at **)
+    in new Promise (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": undefined,
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz2",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz2 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "v1",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz2",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in cachedFetch (at **)
+    in Fuzz2 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+    ],
+    "value": "[Fuzz2:deep;sub24;pool:1:v1,[[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 17) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": undefined,
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "v3",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz0:sub4;v3;,[]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 18) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+    ],
+    "value": "[Fuzz0:deep;,[[object Object]]]",
+  },
+]
+`;
+
+exports[`ReactFlightAsyncDebugInfoFuzz produces stable async debug info (seed 19) 1`] = `
+[
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz0",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": [
+                "caught:rejected v3",
+                "t4",
+                "sub14",
+              ],
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "Object.readFile",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzRead (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "v2",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in cachedFetch (at **)
+    in Fuzz0 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": "0",
+          "name": "FuzzUse1",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz0",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.map (at **)
+    in Fuzz0 (at **)",
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": undefined,
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": "0",
+            "name": "FuzzUse1",
+            "owner": {
+              "env": "Server",
+              "key": null,
+              "name": "Fuzz0",
+              "props": {},
+              "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+            },
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.map (at **)
+    in Fuzz0 (at **)",
+          },
+          "stack": "    in FuzzUse1 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+      [],
+    ],
+    "value": "[Fuzz0:caught:rejected v3,t4,sub14;pool:2:v2,[[object Object],[object Object]]]",
+  },
+  {
+    "debugInfo": [
+      [
+        {
+          "time": 0,
+        },
+        {
+          "env": "Server",
+          "key": null,
+          "name": "Fuzz5",
+          "props": {},
+          "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "caught:rejected v12",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz5",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in Fuzz5 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+        {
+          "awaited": {
+            "end": 0,
+            "env": "Server",
+            "name": "setTimeout",
+            "stack": "    in  (at **)
+    in new Promise (at **)
+    in fuzzDelay (at **)
+    in Object.fireLeaf [as fire] (at **)
+    in drive (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)",
+            "start": 0,
+            "value": {
+              "value": "t17",
+            },
+          },
+          "env": "Server",
+          "owner": {
+            "env": "Server",
+            "key": null,
+            "name": "Fuzz5",
+            "props": {},
+            "stack": "    in  (at **)
+    in Array.forEach (at **)
+    in runSeed (at **)
+    in Object.<anonymous> (at **)
+    in new Promise (at **)",
+          },
+          "stack": "    in Fuzz5 (at **)",
+        },
+        {
+          "time": 0,
+        },
+        {
+          "time": 0,
+        },
+      ],
+    ],
+    "value": "[Fuzz5:caught:rejected v12;t17;,[]]",
+  },
+]
+`;

@@ -58,7 +58,12 @@ function normalizeIOInfo(config: DebugInfoConfig, ioInfo) {
   }
   const promise = ioInfo.value;
   if (promise) {
-    promise.then(); // init
+    // init. The no-op handlers keep a rejected value from turning into an
+    // unhandled rejection.
+    promise.then(
+      function () {},
+      function () {},
+    );
     if (promise.status === 'fulfilled') {
       if (ioInfo.name === 'rsc stream') {
         copy.byteSize = 0;
