@@ -831,6 +831,28 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
           } else {
             leafSightings.set(leafId, (leafSightings.get(leafId) || 0) + 1);
             const frames = io.stack ? io.stack.map(frame => frame[0]) : [];
+            // Pool io is named after the fs or timer API call, chained io
+            // after the leaf constructor.
+            if (meta.chain === null) {
+              if (!meta.useTimer && !/readFile/.test(io.name)) {
+                violations.push(leafId + ' pool fs io named ' + io.name);
+              }
+              if (meta.useTimer && !/setTimeout/.test(io.name)) {
+                violations.push(leafId + ' pool timer io named ' + io.name);
+              }
+            } else if (io.name !== 'leaf') {
+              violations.push(leafId + ' chained io named ' + io.name);
+            }
+            // Stacks start at the promise executor or the leaf
+            // constructor, never inside hook dispatch internals.
+            if (
+              frames.length > 0 &&
+              frames[0] !== 'readFixture' &&
+              frames[0] !== 'sleep' &&
+              frames[0] !== 'leaf'
+            ) {
+              violations.push(leafId + ' io stack starts at ' + frames[0]);
+            }
             if (meta.useTimer && frames.indexOf('readFixture') !== -1) {
               violations.push(
                 leafId + ' used a timer but its io stack reads a file',

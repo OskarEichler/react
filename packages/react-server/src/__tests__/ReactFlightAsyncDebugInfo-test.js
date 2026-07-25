@@ -4160,4 +4160,55 @@ describe('ReactFlightAsyncDebugInfo', () => {
       `);
     }
   });
+
+  it('names I/O started from an fs callback before the request', async () => {
+    // I/O started outside of a render has no owner, so its name comes from
+    // the top frame of the stack captured when it starts. The callback form
+    // of the fs API dispatches through a different depth than fs/promises,
+    // and that frame used to be attributed one frame too deep, naming the io
+    // after whatever userspace frame sat there instead of the fs call.
+    const {readFile} = require('fs');
+    const filename = path.join(__dirname, 'test-file.txt');
+    function readFileWithCallback() {
+      return new Promise((resolve, reject) => {
+        readFile(filename, (error, buffer) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(buffer.toString('utf8').slice(0, 26));
+          }
+        });
+      });
+    }
+    const filePromise = readFileWithCallback();
+    async function Component() {
+      return await filePromise;
+    }
+
+    const stream = ReactServerDOMServer.renderToPipeableStream(
+      ReactServer.createElement(Component),
+      {},
+    );
+    const readable = new Stream.PassThrough(streamOptions);
+    const result = ReactServerDOMClient.createFromNodeStream(readable, {
+      moduleMap: {},
+      moduleLoading: {},
+    });
+    stream.pipe(readable);
+    expect(await result).toBe('Lorem ipsum dolor sit amet');
+    await finishLoadingStream(readable);
+
+    if (
+      __DEV__ &&
+      gate(
+        flags =>
+          flags.enableComponentPerformanceTrack && flags.enableAsyncDebugInfo,
+      )
+    ) {
+      const ioNames = getDebugInfo(result)
+        .filter(entry => entry.awaited)
+        .map(entry => entry.awaited.name);
+      expect(ioNames).toContain('readFile');
+    }
+  });
 });
