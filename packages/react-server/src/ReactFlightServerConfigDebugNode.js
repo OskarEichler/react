@@ -27,15 +27,27 @@ import {
 } from './ReactFlightAsyncSequence';
 import {resolveOwner} from './flight/ReactFlightCurrentOwner';
 import {resolveRequest, isAwaitInUserspace} from './ReactFlightServer';
-import {createHook, executionAsyncId, AsyncResource} from 'async_hooks';
+import {createHook, executionAsyncId} from 'async_hooks';
+import {promiseHooks} from 'v8';
 import {enableAsyncDebugInfo} from 'shared/ReactFeatureFlags';
 import {parseStackTracePrivate} from './ReactFlightServerConfig';
 
-// $FlowFixMe[method-unbinding]
-const getAsyncId = AsyncResource.prototype.asyncId;
+// Promises are tracked by the Promise instance itself using V8's promise
+// hooks which pass us the instances directly. This way a tracking node lives
+// exactly as long as the Promise it describes is still reachable, without us
+// having to observe when the Promise is garbage collected.
+const pendingPromises: WeakMap<Promise<any>, AsyncSequence> = __DEV__ &&
+enableAsyncDebugInfo
+  ? new WeakMap()
+  : (null as any);
 
 const pendingOperations: Map<number, AsyncSequence> =
   __DEV__ && enableAsyncDebugInfo ? new Map() : (null as any);
+
+// The stack of Promises whose continuations are currently executing.
+// The equivalent of executionAsyncId() for the V8 promise hooks.
+const executingPromises: Array<Promise<any>> =
+  __DEV__ && enableAsyncDebugInfo ? [] : (null as any);
 
 // Keep the last resolved await as a workaround for async functions missing data.
 let lastRanAwait: null | AwaitNode = null;
@@ -53,8 +65,12 @@ function resolvePromiseOrAwaitNode(
 }
 
 function getCurrentOperation(): void | AsyncSequence {
-  // The operation associated with whatever execution context we are currently
-  // running inside of, if we are tracking it.
+  // If we're executing within a Promise continuation, that Promise is the
+  // current execution context. Otherwise, we're in a non-Promise resource's
+  // callback (e.g. a timer or socket) tracked by async_hooks.
+  if (executingPromises.length > 0) {
+    return pendingPromises.get(executingPromises[executingPromises.length - 1]);
+  }
   return pendingOperations.get(executionAsyncId());
 }
 
@@ -260,6 +276,61 @@ function parseHookStackTrace(
 // but given that typically this is just a live server, it doesn't really matter.
 export function initAsyncDebugInfo(): void {
   if (__DEV__ && enableAsyncDebugInfo) {
+    if (promiseHooks == null) {
+      // This is not a V8 runtime. Async debug info is not supported.
+      return;
+    }
+    try {
+      promiseHooks.createHook({
+        init(promise: Promise<any>, parent: void | Promise<any>): void {
+          let node: AsyncSequence;
+          if (parent !== undefined) {
+            // When you call .then() on a native Promise, or await/Promise.all() a thenable,
+            // then this intermediate Promise is created. We use this as our await point.
+            const trigger = pendingPromises.get(parent);
+            if (trigger === undefined) {
+              // We don't track awaits on things that started outside our tracked scope.
+              return;
+            }
+            node = createAwaitNode(promise, trigger);
+          } else {
+            node = createPromiseNode(promise, getCurrentOperation());
+          }
+          pendingPromises.set(promise, node);
+        },
+        before(promise: Promise<any>): void {
+          executingPromises.push(promise);
+          const node = pendingPromises.get(promise);
+          if (node !== undefined) {
+            beforeExecution(node);
+          }
+        },
+        after(promise: Promise<any>): void {
+          // Normally the top of the stack but we scan defensively in case an
+          // unwind was not observed.
+          for (let i = executingPromises.length - 1; i >= 0; i--) {
+            if (executingPromises[i] === promise) {
+              executingPromises.length = i;
+              return;
+            }
+          }
+        },
+        settled(promise: Promise<any>): void {
+          const node = pendingPromises.get(promise);
+          if (node !== undefined) {
+            const executingPromise =
+              executingPromises.length > 0
+                ? executingPromises[executingPromises.length - 1]
+                : null;
+            promiseSettled(node, promise === executingPromise);
+          }
+        },
+      });
+    } catch (x) {
+      // Some runtimes ship a v8 module whose promise hooks are not functional
+      // (e.g. Bun). Async debug info is not supported there.
+      return;
+    }
     createHook({
       init(
         asyncId: number,
@@ -267,22 +338,22 @@ export function initAsyncDebugInfo(): void {
         triggerAsyncId: number,
         resource: any,
       ): void {
-        const trigger = pendingOperations.get(triggerAsyncId);
-        let node: AsyncSequence;
         if (type === 'PROMISE') {
-          const currentAsyncId = executionAsyncId();
-          if (currentAsyncId !== triggerAsyncId) {
-            // When you call .then() on a native Promise, or await/Promise.all() a thenable,
-            // then this intermediate Promise is created. We use this as our await point
-            if (trigger === undefined) {
-              // We don't track awaits on things that started outside our tracked scope.
-              return;
-            }
-            node = createAwaitNode(resource as Promise<any>, trigger);
-          } else {
-            node = createPromiseNode(resource as Promise<any>, trigger);
-          }
-        } else if (
+          // Promises are tracked by the V8 promise hooks above which hand us
+          // the instances themselves rather than reducing them to ids.
+          return;
+        }
+        let trigger: void | AsyncSequence;
+        if (triggerAsyncId === executionAsyncId()) {
+          // Spawned by whatever we're currently executing, which may be a
+          // Promise continuation that async_hooks only knows by id.
+          trigger = getCurrentOperation();
+        } else {
+          // Spawned by another resource, such as a connection on a server handle.
+          trigger = pendingOperations.get(triggerAsyncId);
+        }
+        let node: AsyncSequence;
+        if (
           // bound-anonymous-fn is the default name for snapshots and .bind() without a name.
           // This isn't I/O by itself but likely just a continuation. If the bound function
           // has a name, we might treat it as I/O but we can't tell the difference.
@@ -377,13 +448,6 @@ export function initAsyncDebugInfo(): void {
         }
       },
 
-      promiseResolve(asyncId: number): void {
-        const node = pendingOperations.get(asyncId);
-        if (node !== undefined) {
-          promiseSettled(node, asyncId === executionAsyncId());
-        }
-      },
-
       destroy(asyncId: number): void {
         // If we needed the meta data from this operation we should have already
         // extracted it or it should be part of a chain of triggers.
@@ -398,7 +462,11 @@ export function markAsyncSequenceRootTask(): void {
     // Whatever Task we're running now is spawned by React itself to perform render work.
     // Don't track any cause beyond this task. We may still track I/O that was started outside
     // React but just not the cause of entering the render.
-    pendingOperations.delete(executionAsyncId());
+    if (executingPromises.length > 0) {
+      pendingPromises.delete(executingPromises[executingPromises.length - 1]);
+    } else {
+      pendingOperations.delete(executionAsyncId());
+    }
   }
 }
 
@@ -420,20 +488,7 @@ export function getAsyncSequenceFromPromise(
   if (!__DEV__ || !enableAsyncDebugInfo) {
     return null;
   }
-  // A Promise is conceptually an AsyncResource but doesn't have its own methods.
-  // We use this hack to extract the internal asyncId off the Promise.
-  let asyncId: void | number;
-  try {
-    asyncId = getAsyncId.call(promise);
-  } catch (x) {
-    // Ignore errors extracting the ID. We treat it as missing.
-    // This could happen if our hack stops working or in the case where this is
-    // a Proxy that throws such as our own ClientReference proxies.
-  }
-  if (asyncId === undefined) {
-    return null;
-  }
-  const node = pendingOperations.get(asyncId);
+  const node = pendingPromises.get(promise);
   if (node === undefined) {
     return null;
   }
