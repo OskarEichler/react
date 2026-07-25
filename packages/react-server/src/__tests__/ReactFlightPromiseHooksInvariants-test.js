@@ -30,6 +30,7 @@ describeIfPromiseHooks('v8.promiseHooks invariants', () => {
 
   it('provides the events the async debug tracking depends on', async () => {
     const stack = [];
+    const pushed = new WeakSet(); // promises whose before we observed
     const parents = new WeakMap(); // promise -> parent promise
     const settled = new WeakSet();
     const failures = [];
@@ -47,6 +48,7 @@ describeIfPromiseHooks('v8.promiseHooks invariants', () => {
         }
       },
       before(promise) {
+        pushed.add(promise);
         stack.push(promise);
       },
       after(promise) {
@@ -56,7 +58,13 @@ describeIfPromiseHooks('v8.promiseHooks invariants', () => {
             return;
           }
         }
-        failures.push('after fired with no matching stack entry');
+        // A continuation that was already executing when the hook was
+        // registered unwinds through us without a matching before. That's
+        // the case the implementation's defensive scan exists for; only a
+        // miss for a before we did observe is a violation.
+        if (pushed.has(promise)) {
+          failures.push('after fired with no matching stack entry');
+        }
       },
       settled(promise) {
         settled.add(promise);
