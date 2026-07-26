@@ -982,10 +982,11 @@ function initializeDebugChunk(
     const debugInfo = chunk._debugInfo;
     const prevIsInitializingDebugInfo = isInitializingDebugInfo;
     isInitializingDebugInfo = true;
+    let idx = -1;
     try {
       if (debugChunk.status === RESOLVED_MODEL) {
         // Find the index of this debug info by walking the linked list.
-        let idx = debugInfo.length;
+        idx = debugInfo.length;
         let c = debugChunk._debugChunk;
         while (c !== null) {
           if (c.status !== INITIALIZED) {
@@ -1045,7 +1046,14 @@ function initializeDebugChunk(
         }
       }
     } catch (error) {
-      triggerErrorOnChunk(response, chunk, error);
+      // The chunk is the data chunk whose debug info failed to initialize.
+      // Its data is unaffected, so drop the entry rather than rejecting the
+      // chunk with an error that isn't the data's. The reserved slot gets a
+      // minimal component info, like errors are represented in debug info.
+      if (idx !== -1) {
+        const erroredComponent: ReactComponentInfo = {name: ''};
+        debugInfo[idx] = erroredComponent;
+      }
     } finally {
       isInitializingDebugInfo = prevIsInitializingDebugInfo;
     }
@@ -4076,7 +4084,8 @@ function initializeFakeStack(
     debugInfo.debugStack = createFakeJSXCallStackInDEV(response, stack, env);
   }
   const owner = debugInfo.owner;
-  if (owner != null) {
+  // The owner may have been degraded to a placeholder string by the server.
+  if (owner != null && typeof owner === 'object') {
     // Initialize any owners not yet initialized.
     initializeFakeStack(response, owner);
     if (owner.debugLocation === undefined && debugInfo.debugStack != null) {
@@ -4323,7 +4332,13 @@ function resolveConsoleEntry(
   }
 }
 
-function initializeIOInfo(response: Response, ioInfo: ReactIOInfo): void {
+function initializeIOInfo(response: Response, value: mixed): void {
+  if (typeof value !== 'object' || value === null) {
+    // The server degraded this model to a placeholder string when it failed
+    // to serialize it. There is no entry to initialize.
+    return;
+  }
+  const ioInfo: ReactIOInfo = value as any;
   if (ioInfo.stack !== undefined) {
     initializeFakeTask(response, ioInfo);
     initializeFakeStack(response, ioInfo);

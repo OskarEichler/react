@@ -4268,4 +4268,151 @@ describe('ReactFlightAsyncDebugInfo', () => {
     // whichever test happens to run next.
     await new Promise(resolve => setTimeout(resolve, 0));
   });
+
+  // A thenable that throws for any property access outside the thenable
+  // protocol. Our own ClientReference proxies exempt the serialization
+  // probes, but userland reference proxies of the same shape don't.
+  function proxyThenable(value) {
+    return new Proxy(
+      {
+        then(resolve) {
+          resolve(value);
+        },
+      },
+      {
+        get(target, key) {
+          if (
+            key === 'then' ||
+            key === 'status' ||
+            key === 'value' ||
+            key === 'reason' ||
+            key === 'constructor' ||
+            typeof key === 'symbol'
+          ) {
+            return target[key];
+          }
+          throw new Error('touched forbidden key ' + String(key));
+        },
+        set(target, key, newValue) {
+          target[key] = newValue;
+          return true;
+        },
+      },
+    );
+  }
+
+  it('tolerates a proxy thenable prop on a component that awaits I/O', async () => {
+    // The prop makes JSON.stringify of the component's debug info throw.
+    // That must never affect the component's actual data.
+    // I/O created outside any component so the degraded component info is
+    // only referenced by the Child task's awaited debug rows.
+    const io1 = delay(1);
+    const io2 = delay(10);
+
+    async function Child({data}) {
+      // Awaited debug rows flush earlier than the task's own model row.
+      await io1;
+      await io2;
+      return 'child:' + (await data);
+    }
+
+    async function App() {
+      await io1;
+      return [
+        'app',
+        [
+          ReactServer.createElement(Child, {
+            key: '0',
+            data: proxyThenable('a'),
+          }),
+        ],
+      ];
+    }
+
+    const stream = ReactServerDOMServer.renderToPipeableStream(
+      ReactServer.createElement(App, null),
+      {},
+    );
+    const readable = new Stream.PassThrough(streamOptions);
+    const result = ReactServerDOMClient.createFromNodeStream(readable, {
+      moduleMap: {},
+      moduleLoading: {},
+    });
+    stream.pipe(readable);
+    expect((await result)[0]).toBe('app');
+    await finishLoadingStream(readable);
+  });
+
+  it('tolerates a prop with a throwing toJSON getter on a component that awaits I/O', async () => {
+    // JSON.stringify probes toJSON on every raw object before the replacer
+    // runs, so the probe throws while the component's debug info is
+    // serialized. That must never affect the component's actual data.
+    const throwingToJSON = {
+      get toJSON() {
+        throw new Error('touched forbidden key toJSON');
+      },
+    };
+
+    const io1 = delay(1);
+    const io2 = delay(10);
+
+    async function Child({data}) {
+      await io1;
+      await io2;
+      return 'child';
+    }
+
+    async function App() {
+      await io1;
+      return [
+        'app',
+        [ReactServer.createElement(Child, {key: '0', data: throwingToJSON})],
+      ];
+    }
+
+    const stream = ReactServerDOMServer.renderToPipeableStream(
+      ReactServer.createElement(App, null),
+      {},
+    );
+    const readable = new Stream.PassThrough(streamOptions);
+    const result = ReactServerDOMClient.createFromNodeStream(readable, {
+      moduleMap: {},
+      moduleLoading: {},
+    });
+    stream.pipe(readable);
+    expect((await result)[0]).toBe('app');
+    await finishLoadingStream(readable);
+  });
+
+  it('tolerates a userland thenable prop that resolves twice', async () => {
+    // Every consumer that attaches raw .then() callbacks in this path
+    // already guards against multiple settles.
+    const evilThenable = {
+      then(resolve) {
+        resolve('a');
+        resolve('b');
+      },
+    };
+
+    async function Child({data}) {
+      return 'child:' + (await data);
+    }
+
+    function App() {
+      return ReactServer.createElement(Child, {data: evilThenable});
+    }
+
+    const stream = ReactServerDOMServer.renderToPipeableStream(
+      ReactServer.createElement(App, null),
+      {},
+    );
+    const readable = new Stream.PassThrough(streamOptions);
+    const result = ReactServerDOMClient.createFromNodeStream(readable, {
+      moduleMap: {},
+      moduleLoading: {},
+    });
+    stream.pipe(readable);
+    expect(await result).toBe('child:a');
+    await finishLoadingStream(readable);
+  });
 });
