@@ -9,7 +9,8 @@
 // out with Promise.all, pass promises down as props, and await data that was
 // preloaded before the request. Some seeds abort mid-render, throw in a
 // subtree, or run two renders interleaved. A small share of the data layer
-// is userland thenables and Promise subclasses.
+// is userland thenables and Promise subclasses. The emitted debug info is
+// checked against what each seed's program actually did.
 //
 // The runs are deterministic. Every random decision is drawn while the seed
 // is being built, never while it runs. Async leaves park their resolvers
@@ -94,6 +95,42 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
 
   jest.setTimeout(60000);
 
+  // The client's performance track emits performance.measure calls. Record
+  // them (without forwarding, so an invalid span can't throw from inside
+  // React) and check basic coherence on every span.
+  let recordedMeasures;
+  const originalPerformance = {};
+  ['measure', 'mark', 'clearMeasures', 'clearMarks'].forEach(method => {
+    originalPerformance[method] = performance[method];
+  });
+  beforeEach(() => {
+    recordedMeasures = [];
+    const record = {
+      measure(measureName, options) {
+        recordedMeasures.push({name: measureName, options});
+      },
+      mark() {},
+      clearMeasures() {},
+      clearMarks() {},
+    };
+    Object.keys(originalPerformance).forEach(method => {
+      Object.defineProperty(performance, method, {
+        value: record[method],
+        configurable: true,
+        writable: true,
+      });
+    });
+  });
+  afterEach(() => {
+    Object.keys(originalPerformance).forEach(method => {
+      Object.defineProperty(performance, method, {
+        value: originalPerformance[method],
+        configurable: true,
+        writable: true,
+      });
+    });
+  });
+
   function finishLoadingStream(readable) {
     return new Promise(resolve => {
       if (readable.readableEnded) {
@@ -109,9 +146,54 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
     // that GC can never make a WeakRef-dependent field disappear from the
     // output of one run but not another.
     const retained = [];
-    // Which io kind (timer or fs read) backs each leaf id, so checks can
-    // compare the emitted attribution against what actually happened.
-    const leafKinds = new Map();
+    // The chain of named sources (innermost first, ending with the component
+    // that initiated the call) currently executing synchronously. Sources
+    // and component call sites maintain it, so each leaf records exactly
+    // which code created it.
+    let currentChain = null;
+    function named(name, fn) {
+      return {
+        [name]: function () {
+          const parentChain = currentChain;
+          currentChain =
+            parentChain === null ? [name] : [name].concat(parentChain);
+          try {
+            return fn.apply(this, arguments);
+          } finally {
+            currentChain = parentChain;
+          }
+        },
+      }[name];
+    }
+    function bumpSettleBatch() {
+      settleBatch++;
+    }
+    // Leaves whose promise is handed to a child as a prop: the child's await
+    // dedupes into the parent's, so they don't surface individually.
+    // TODO: assert exactly where they do surface instead.
+    const propLeaves = new Set();
+    function trackPropLeaves(fn) {
+      const before = nextValue;
+      const result = fn();
+      for (let i = before; i < nextValue; i++) {
+        propLeaves.add('v' + i);
+      }
+      return result;
+    }
+    function withComponent(componentName, source) {
+      const parentChain = currentChain;
+      currentChain = [componentName];
+      try {
+        return source();
+      } finally {
+        currentChain = parentChain;
+      }
+    }
+    // Ground truth per leaf id: which io kind backs it, whether it rejects,
+    // which chain of sources created it, and when the driver settled it.
+    const leafMeta = new Map();
+    let settleCount = 0;
+    let settleBatch = 0;
     // Parked leaves: {io, settle}. The driver runs io() to completion and
     // later calls settle(), possibly in the same tick as other settles.
     const pending = [];
@@ -150,7 +232,15 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
     function leaf(opts) {
       const id = 'v' + nextValue++;
       const useTimer = opts.useTimer === true;
-      leafKinds.set(id, useTimer);
+      const meta = {
+        useTimer,
+        rejects: opts.rejects === true,
+        big: opts.big === true,
+        object: opts.object === true,
+        chain: currentChain === null ? null : currentChain.slice(),
+        settleIndex: -1,
+      };
+      leafMeta.set(id, meta);
       const value = opts.big
         ? // Over the 1MB limit, so the serialized debug value gets omitted.
           id + ':' + 'x'.repeat(1100000)
@@ -161,6 +251,8 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
         pending.push({
           io: useTimer ? waitForTimer : readFromFile,
           settle() {
+            meta.settleIndex = settleCount++;
+            meta.settleBatch = settleBatch;
             if (opts.rejects) {
               reject(new Error('rejected ' + id));
             } else {
@@ -210,26 +302,26 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
         // A component fetching its own data.
         const useTimer = rand.intBetween(0, 1) === 0;
         if (rand.intBetween(0, 1) === 0) {
-          return function fetchData() {
+          return named('fetchData', function fetchData() {
             return leaf({useTimer: useTimer});
-          };
+          });
         }
-        return async function fetchAndTransform() {
+        return named('fetchAndTransform', async function fetchAndTransform() {
           const data = await leaf({useTimer: useTimer});
           return String(data).toUpperCase();
-        };
+        });
       }
       if (roll <= 40) {
         const key = rand.intBetween(0, 3);
-        return function fetchCached() {
+        return named('fetchCached', function fetchCached() {
           return cachedFetch(key);
-        };
+        });
       }
       if (roll <= 50) {
         const preloaded = pool[rand.intBetween(0, pool.length - 1)];
-        return function usePreloaded() {
+        return named('usePreloaded', function usePreloaded() {
           return preloaded;
-        };
+        });
       }
       if (roll <= 65) {
         // A waterfall: each step awaits and depends on the previous step.
@@ -238,13 +330,13 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
         for (let i = 0; i < n; i++) {
           steps.push(genSource(depth + 1));
         }
-        return async function loadWaterfall() {
+        return named('loadWaterfall', async function loadWaterfall() {
           let acc = '';
           for (let i = 0; i < steps.length; i++) {
             acc += String(await steps[i]()) + '>';
           }
           return acc;
-        };
+        });
       }
       if (roll <= 75) {
         // A fan-out.
@@ -253,44 +345,44 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
         for (let i = 0; i < n; i++) {
           parts.push(genSource(depth + 1));
         }
-        return function loadAll() {
+        return named('loadAll', function loadAll() {
           return Promise.all(parts.map(part => part()));
-        };
+        });
       }
       if (roll <= 81) {
         // A derived promise. Sometimes the callback itself blocks on more
         // data, which forks the await chain.
         const inner = genSource(depth + 1);
         const next = rand.intBetween(0, 1) === 0 ? genSource(depth + 1) : null;
-        return function loadDerived() {
+        return named('loadDerived', function loadDerived() {
           return Promise.resolve(inner()).then(function transformResult(x) {
             return next !== null ? next() : 'transformed:' + x;
           });
-        };
+        });
       }
       if (roll <= 85) {
         // Data that fails to load, handled by the data layer.
         const useTimer = rand.intBetween(0, 1) === 0;
-        return function fetchWithFallback() {
+        return named('fetchWithFallback', function fetchWithFallback() {
           return leaf({rejects: true, useTimer: useTimer}).catch(
             function useFallback(x) {
               return 'fallback:' + x.message;
             },
           );
-        };
+        });
       }
       if (roll <= 89) {
         const first = genSource(depth + 1);
         const second = genSource(depth + 1);
-        return function loadFastest() {
+        return named('loadFastest', function loadFastest() {
           return Promise.race([first(), second()]);
-        };
+        });
       }
       if (roll <= 92) {
         // Paging through an async iterator.
         const pages = [genSource(depth + 1), genSource(depth + 1)];
         const take = rand.intBetween(1, 2);
-        return async function readPages() {
+        return named('readPages', async function readPages() {
           const paginate = async function* paginate() {
             for (let i = 0; i < pages.length; i++) {
               yield await pages[i]();
@@ -309,33 +401,33 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
             await iterator.return();
           }
           return acc;
-        };
+        });
       }
       if (roll <= 94) {
-        return function loadSync() {
+        return named('loadSync', function loadSync() {
           return Promise.resolve(
             retain(Promise.resolve(retain(Promise.resolve('sync')))),
           );
-        };
+        });
       }
       if (roll <= 96) {
         // The serialized debug value of this one gets omitted for size.
         const useTimer = rand.intBetween(0, 1) === 0;
-        return function fetchLargeValue() {
+        return named('fetchLargeValue', function fetchLargeValue() {
           return leaf({big: true, useTimer: useTimer});
-        };
+        });
       }
       if (roll <= 98) {
         const useTimer = rand.intBetween(0, 1) === 0;
-        return function fetchObject() {
+        return named('fetchObject', function fetchObject() {
           return leaf({object: true, useTimer: useTimer});
-        };
+        });
       }
       if (roll <= 99) {
         // A userland thenable, like an ORM query object. Parked with the
         // driver like other leaves; resolves to more data.
         const inner = genSource(depth + 1);
-        return function queryThenable() {
+        return named('queryThenable', function queryThenable() {
           return {
             then(resolve) {
               pending.push({
@@ -346,10 +438,10 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
               });
             },
           };
-        };
+        });
       }
       // A Promise subclass, like a polyfill or instrumented promise.
-      return function subclassedFetch() {
+      return named('subclassedFetch', function subclassedFetch() {
         return new FuzzPromise(resolve => {
           pending.push({
             io: async function noIO() {},
@@ -358,10 +450,23 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
             },
           });
         });
-      };
+      });
     }
 
-    return {retained, pending, pool, genSource, leaf, retain, leafKinds};
+    return {
+      retained,
+      pending,
+      pool,
+      genSource,
+      leaf,
+      retain,
+      leafMeta,
+      named,
+      withComponent,
+      bumpSettleBatch,
+      propLeaves,
+      trackPropLeaves,
+    };
   }
 
   function buildComponents(rand, program, componentRoots, componentCreators) {
@@ -372,11 +477,14 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
     function makeSyncUseComponent(options) {
       const name = 'FuzzUse' + componentId++;
       componentRoots.set(name, options.rootIndex);
+      options.useComponents.add(name);
       const source = once(program.genSource(2));
       const Component = {
         [name]: function () {
           const value = ReactServer.use(
-            program.retain(Promise.resolve(source())),
+            program.retain(
+              Promise.resolve(program.withComponent(name, source)),
+            ),
           );
           return name + ':' + String(value);
         },
@@ -394,12 +502,18 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
       }
       // Awaits happen one after the other or all at once.
       const parallel = rand.intBetween(0, 2) === 0;
+      if (parallel) {
+        options.parallelComponents.add(name);
+      }
       // Sometimes the component's own data fails and it renders a fallback.
       const catches = rand.intBetween(0, 5) === 0;
       const catchesIOKind = catches ? rand.intBetween(0, 1) === 0 : false;
       // Sometimes the component has a bug and throws. The subtree errors
       // but the rest of the render completes.
       const throws = options.canThrow && rand.intBetween(0, 19) === 0;
+      if (throws) {
+        options.throwers.add(name);
+      }
 
       const children = [];
       if (depth < 3) {
@@ -443,23 +557,33 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
       // throws while the component's debug info is serialized, the server
       // degrades the debug info to a string, and the client then corrupts
       // the component's data chunk while failing to initialize it.
-      const propSource = children.length > 0 && rand.intBetween(0, 2) === 0;
+      const propSource =
+        children.length > 0 &&
+        // use() components ignore their props, so a promise prop passed to
+        // one would never be awaited by anyone.
+        !options.useComponents.has(children[0].name) &&
+        rand.intBetween(0, 2) === 0;
 
       const Component = {
         [name]: async function (props) {
           let out = name + ':';
           if (parallel) {
-            const values = await Promise.all(sources.map(source => source()));
+            const values = await Promise.all(
+              sources.map(source => program.withComponent(name, source)),
+            );
             out += values.map(String).join(';');
           } else {
             for (let i = 0; i < sources.length; i++) {
-              out += String(await sources[i]()) + ';';
+              out +=
+                String(await program.withComponent(name, sources[i])) + ';';
             }
           }
           if (catches) {
             try {
               out += String(
-                await program.leaf({rejects: true, useTimer: catchesIOKind}),
+                await program.withComponent(name, () =>
+                  program.leaf({rejects: true, useTimer: catchesIOKind}),
+                ),
               );
             } catch (x) {
               out += 'recovered';
@@ -481,7 +605,13 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
               key: i,
               data:
                 i === 0 && propSource
-                  ? program.retain(Promise.resolve(sources[0]()))
+                  ? program.retain(
+                      Promise.resolve(
+                        program.trackPropLeaves(() =>
+                          program.withComponent(name, sources[0]),
+                        ),
+                      ),
+                    )
                   : null,
               slot: i === 0 ? slotElement : null,
             }),
@@ -542,6 +672,7 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
           batch[i].settle();
           onSettle();
         }
+        program.bumpSettleBatch();
       }
       const hops = rand.intBetween(1, 3);
       for (let i = 0; i < hops; i++) {
@@ -560,8 +691,207 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
     }
   }
 
+  // ---- Computed oracle ----
+  // Every check below derives from what the seed's program actually did, as
+  // recorded by the generator (creator and invocation chains, leaf io kinds,
+  // values) and the driver (settle order), so it holds for any seed.
+
+  function leafIdOfValue(settled) {
+    if (settled == null || settled.status !== 'fulfilled') {
+      return null;
+    }
+    const value = settled.value;
+    if (typeof value === 'string' && /^v[0-9]+$/.test(value)) {
+      return value;
+    }
+    if (
+      value !== null &&
+      typeof value === 'object' &&
+      typeof value.id === 'string' &&
+      /^v[0-9]+$/.test(value.id)
+    ) {
+      return value.id;
+    }
+    return null;
+  }
+
+  function creatorChain(name, componentCreators) {
+    const chain = [];
+    let current = name;
+    while (componentCreators.get(current) != null) {
+      current = componentCreators.get(current);
+      chain.push(current);
+    }
+    return chain;
+  }
+
+  function validateDebugInfo(debugInfo, ctx) {
+    const {
+      componentRoots,
+      componentCreators,
+      leafMeta,
+      rootIndex,
+      violations,
+      leafSightings,
+      orderSamples,
+    } = ctx;
+    let lastTime = -Infinity;
+    debugInfo.forEach(entry => {
+      if (typeof entry.time === 'number') {
+        if (entry.time < lastTime) {
+          violations.push(
+            'time went backwards: ' + entry.time + ' after ' + lastTime,
+          );
+        }
+        lastTime = entry.time;
+      }
+      // The generator knows which component's body created each element, so
+      // the emitted owner chain can be checked against what actually
+      // happened, all the way up.
+      if (
+        typeof entry.name === 'string' &&
+        entry.awaited === undefined &&
+        componentCreators.has(entry.name)
+      ) {
+        const expected = componentCreators.get(entry.name);
+        const actual = entry.owner != null ? entry.owner.name : null;
+        if (actual !== expected) {
+          violations.push(
+            'component ' +
+              entry.name +
+              ' has owner ' +
+              actual +
+              ' but its element was created by ' +
+              expected,
+          );
+        } else if (entry.owner != null) {
+          const expectedChain = creatorChain(entry.name, componentCreators);
+          const actualChain = [];
+          let chainOwner = entry.owner;
+          while (chainOwner != null) {
+            actualChain.push(chainOwner.name);
+            chainOwner = chainOwner.owner;
+          }
+          if (actualChain.join('<') !== expectedChain.join('<')) {
+            violations.push(
+              'component ' +
+                entry.name +
+                ' has owner chain ' +
+                actualChain.join('<') +
+                ' but was created under ' +
+                expectedChain.join('<'),
+            );
+          }
+        }
+      }
+      let owner = entry.owner;
+      const seen = new Set();
+      while (owner != null) {
+        if (seen.has(owner)) {
+          violations.push('owner cycle at ' + owner.name);
+          break;
+        }
+        seen.add(owner);
+        if (
+          componentRoots.has(owner.name) &&
+          componentRoots.get(owner.name) !== rootIndex
+        ) {
+          violations.push('owner ' + owner.name + ' belongs to another render');
+        }
+        owner = owner.owner;
+      }
+      const io = entry.awaited;
+      if (io) {
+        if (
+          typeof io.start === 'number' &&
+          typeof io.end === 'number' &&
+          io.end >= 0 &&
+          io.end < io.start
+        ) {
+          violations.push(
+            'io ended before it started: ' +
+              io.name +
+              ' ' +
+              io.start +
+              '..' +
+              io.end,
+          );
+        }
+        if (io.stack && io.stack.length > 0 && io.name === '') {
+          violations.push('io with a stack but no name');
+        }
+        if (typeof io.byteSize === 'number' && io.byteSize < 0) {
+          violations.push('negative byteSize');
+        }
+        const leafId = leafIdOfValue(io.value);
+        if (leafId !== null) {
+          const meta = leafMeta.get(leafId);
+          if (meta === undefined) {
+            violations.push('io resolved to unknown leaf ' + leafId);
+          } else {
+            leafSightings.set(leafId, (leafSightings.get(leafId) || 0) + 1);
+            const frames = io.stack ? io.stack.map(frame => frame[0]) : [];
+            if (meta.useTimer && frames.indexOf('readFixture') !== -1) {
+              violations.push(
+                leafId + ' used a timer but its io stack reads a file',
+              );
+            }
+            if (!meta.useTimer && frames.indexOf('sleep') !== -1) {
+              violations.push(
+                leafId + ' read a file but its io stack is a timer',
+              );
+            }
+            // A leaf initiated by one render's component must never be
+            // attributed inside the other render.
+            if (meta.chain !== null) {
+              const initiator = meta.chain[meta.chain.length - 1];
+              if (
+                componentRoots.has(initiator) &&
+                componentRoots.get(initiator) !== rootIndex
+              ) {
+                violations.push(
+                  leafId +
+                    ' was initiated by the other render (' +
+                    initiator +
+                    ')',
+                );
+              }
+            }
+            // The recorded value must be exactly what the leaf resolved to.
+            const value = io.value.value;
+            if (meta.object) {
+              if (value.id !== leafId || String(value.items) !== '1,2,3') {
+                violations.push(leafId + ' object value corrupted');
+              }
+            } else if (!meta.big && value !== leafId) {
+              violations.push(
+                leafId + ' value corrupted: ' + JSON.stringify(value),
+              );
+            }
+            if (typeof io.end === 'number' && io.end >= 0) {
+              orderSamples.push({
+                leafId,
+                settleBatch: meta.settleBatch,
+                end: io.end,
+              });
+            }
+          }
+        } else if (
+          io.value != null &&
+          io.value.status === 'fulfilled' &&
+          typeof io.value.value === 'string' &&
+          io.value.value.indexOf('x'.repeat(1000)) !== -1
+        ) {
+          // Big leaf values must be replaced by the omission placeholder;
+          // the raw megabyte string must never reach the client.
+          violations.push('a large debug value was not omitted');
+        }
+      }
+    });
+  }
+
   // Collect debug info from the resolved client tree, in traversal order.
-  function collectDebugInfo(root) {
+  function collectDebugInfo(root, ctx) {
     const out = [];
     const visited = new Set();
     const queue = [root];
@@ -576,6 +906,7 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
       }
       visited.add(value);
       if (value._debugInfo) {
+        validateDebugInfo(value._debugInfo, ctx);
         out.push(value._debugInfo);
       }
       if (Array.isArray(value)) {
@@ -672,11 +1003,17 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
     // the first render partway through.
     const concurrentRenders = rand.intBetween(0, 3) === 0 ? 2 : 1;
     const abortAfter = rand.intBetween(0, 5) === 0 ? rand.intBetween(2, 8) : -1;
+    const throwers = new Set();
+    const parallelComponents = new Set();
+    const useComponents = new Set();
     const roots = [];
     for (let i = 0; i < concurrentRenders; i++) {
       const Root = makeComponent(0, {
         canThrow: abortAfter === -1,
         rootIndex: i,
+        throwers,
+        parallelComponents,
+        useComponents,
       });
       // Root elements are created outside any component.
       componentCreators.set(Root.name, null);
@@ -742,8 +1079,21 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
     });
     await allDone;
 
+    const violations = [];
     const output = [];
+    const contexts = [];
     for (let i = 0; i < results.length; i++) {
+      const ctx = {
+        componentRoots,
+        componentCreators,
+        leafMeta: program.leafMeta,
+        rootIndex: i,
+        violations,
+        leafSightings: new Map(),
+        orderSamples: [],
+        collected: false,
+      };
+      contexts.push(ctx);
       let value;
       try {
         value = await results[i];
@@ -751,17 +1101,153 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
         output.push({value: 'root rejected: ' + x.message, debugInfo: []});
         continue;
       }
+      ctx.collected = true;
       output.push({
         value: summarize(value),
-        debugInfo: collectDebugInfo(value),
+        // Walk from the root chunk itself: when the root model resolves to a
+        // primitive, its debug info has no value to move onto and stays on
+        // the chunk.
+        debugInfo: collectDebugInfo(results[i], ctx),
       });
     }
+
+    // Components under a throwing component never finish rendering, so
+    // their data is exempt from the completeness check.
+    const exempt = new Set();
+    componentCreators.forEach((creator, componentName) => {
+      let current = componentName;
+      while (current != null) {
+        if (throwers.has(current)) {
+          exempt.add(componentName);
+          break;
+        }
+        current = componentCreators.get(current);
+      }
+    });
+
+    contexts.forEach(ctx => {
+      // Dedup: shared data legitimately appears once per awaiting component
+      // (plus forks), so the bound is the number of components in the
+      // render. Exponential accumulation blows past it immediately.
+      let componentCount = 0;
+      componentRoots.forEach(root => {
+        if (root === ctx.rootIndex) {
+          componentCount++;
+        }
+      });
+      ctx.leafSightings.forEach((count, leafId) => {
+        if (count > componentCount + 4) {
+          violations.push(
+            leafId + ' appears ' + count + ' times in one request',
+          );
+        }
+      });
+      // Settle order: the driver settled leaves one batch at a time, so io
+      // end times must be ordered like the settles were.
+      // Within one batch the recurring pings of different ios interleave, so
+      // ordering is only guaranteed across batches.
+      const samples = [];
+      const sampled = new Set();
+      ctx.orderSamples.forEach(sample => {
+        if (sample.settleBatch !== undefined && !sampled.has(sample.leafId)) {
+          sampled.add(sample.leafId);
+          samples.push(sample);
+        }
+      });
+      samples.sort((a, b) => a.settleBatch - b.settleBatch);
+      for (let i = 1; i < samples.length; i++) {
+        if (
+          samples[i].settleBatch > samples[i - 1].settleBatch &&
+          samples[i].end < samples[i - 1].end - 0.001
+        ) {
+          violations.push(
+            'io end times out of settle order: ' +
+              samples[i - 1].leafId +
+              ' then ' +
+              samples[i].leafId,
+          );
+        }
+      }
+    });
+
+    // Completeness: every leaf a component actually fetched and settled must
+    // be attributed somewhere in that component's render. Exemptions, each
+    // for a reason: aborted renders (the abort races the io), rejected roots
+    // (nothing was collected), throwing subtrees (they never finish),
+    // combinator and parallel awaits (only the io that unblocked them is
+    // attributed -- TODO: the driver knows the settle order, so the
+    // unblocker is predictable; assert it exactly), use() components (the
+    // used promise carries the transformed value, so there is nothing to
+    // join on), and pre-request pool data (no initiating component).
+    if (abortAfter === -1) {
+      program.leafMeta.forEach((meta, leafId) => {
+        if (
+          meta.chain === null ||
+          meta.rejects ||
+          meta.big ||
+          meta.settleIndex === -1 ||
+          meta.chain.indexOf('loadFastest') !== -1 ||
+          meta.chain.indexOf('loadAll') !== -1 ||
+          meta.chain.indexOf('readPages') !== -1 ||
+          meta.chain.indexOf('queryThenable') !== -1 ||
+          program.propLeaves.has(leafId)
+        ) {
+          return;
+        }
+        const initiator = meta.chain[meta.chain.length - 1];
+        if (
+          !componentRoots.has(initiator) ||
+          exempt.has(initiator) ||
+          parallelComponents.has(initiator) ||
+          useComponents.has(initiator)
+        ) {
+          return;
+        }
+        const ctx = contexts[componentRoots.get(initiator)];
+        if (ctx && ctx.collected === true && !ctx.leafSightings.has(leafId)) {
+          violations.push(
+            leafId +
+              ' (' +
+              meta.chain.join('<') +
+              ') settled but never appeared in the debug info',
+          );
+        }
+      });
+    }
+
     // The client flushes the performance track on a 100ms timer after the
-    // last pending chunk resolves. Wait it out so the flush happens during
-    // this test instead of during whatever runs next.
+    // last pending chunk resolves. Wait it out so the flush lands in this
+    // seed's recording instead of on the global timeline during a later test.
     await new Promise(resolve => setTimeout(resolve, 150));
 
-    return output;
+    // Performance track spans.
+    recordedMeasures.forEach(measure => {
+      const options = measure.options;
+      if (
+        options == null ||
+        !Number.isFinite(options.start) ||
+        !Number.isFinite(options.end)
+      ) {
+        violations.push('measure without finite start/end: ' + measure.name);
+      } else if (options.end < options.start) {
+        violations.push(
+          'span with negative width: ' +
+            measure.name +
+            ' ' +
+            options.start +
+            '..' +
+            options.end,
+        );
+      } else if (
+        options.detail == null ||
+        options.detail.devtools == null ||
+        typeof options.detail.devtools.track !== 'string'
+      ) {
+        violations.push('measure without a track: ' + measure.name);
+      }
+    });
+
+    return {output, violations, measureCount: recordedMeasures.length};
   }
 
   // FUZZ_TEST_SEED reruns or explores any seed: every check is computed from
@@ -776,9 +1262,22 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
     }
   }
   seeds.forEach(seed => {
-    it(`produces stable async debug info (seed ${seed})`, async () => {
+    it(`produces coherent async debug info (seed ${seed})`, async () => {
       // Render unconditionally so we catch any production crashes
-      await runSeed(seed);
+      const {output, violations, measureCount} = await runSeed(seed);
+      if (
+        __DEV__ &&
+        gate(
+          flags =>
+            flags.enableComponentPerformanceTrack && flags.enableAsyncDebugInfo,
+        )
+      ) {
+        expect(violations).toEqual([]);
+        if (output[0].debugInfo.length > 0) {
+          // The client flushed the performance track for the initial render.
+          expect(measureCount).toBeGreaterThan(0);
+        }
+      }
     });
   });
 });
