@@ -802,6 +802,11 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
       }
       const io = entry.awaited;
       if (io) {
+        if (io.value != null && typeof io.value.then === 'function') {
+          // A fulfillment-only subscription, like a DevTools-style inspector
+          // would use, must be safe even for caught rejections.
+          io.value.then(function inspectValue() {});
+        }
         if (
           typeof io.start === 'number' &&
           typeof io.end === 'number' &&
