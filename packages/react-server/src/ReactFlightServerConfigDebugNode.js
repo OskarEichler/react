@@ -44,6 +44,26 @@ enableAsyncDebugInfo
 const pendingOperations: Map<number, AsyncSequence> =
   __DEV__ && enableAsyncDebugInfo ? new Map() : (null as any);
 
+// We intentionally don't use the async_hooks destroy hook to prune the map.
+// Destroy hooks are counted globally in Node.js and as soon as one exists,
+// every Promise in the process gets its own GC-tracked destroy registration,
+// which is the per-Promise overhead the V8 promise hooks otherwise avoid.
+// Instead we observe the collection of the resource object itself. Resources
+// are passed to init so this tracks the actual handle, not just an id.
+const pendingOperationsRegistry: FinalizationRegistry<number> =
+  __DEV__ && enableAsyncDebugInfo
+    ? new FinalizationRegistry(asyncId => {
+        pendingOperations.delete(asyncId);
+      })
+    : (null as any);
+
+// Pooled resources (e.g. HTTPPARSER) are inited with a new id on each reuse
+// but only collected when the pool releases them. Tracking the last id per
+// resource lets a reuse evict the previous use's entry, so a pooled resource
+// holds at most one entry at a time.
+const lastResourceId: WeakMap<any, number> =
+  __DEV__ && enableAsyncDebugInfo ? new WeakMap() : (null as any);
+
 // The stack of Promises whose continuations are currently executing.
 // The equivalent of executionAsyncId() for the V8 promise hooks.
 const executingPromises: Array<Promise<any>> =
@@ -396,6 +416,14 @@ export function initAsyncDebugInfo(): void {
             node = trigger;
           }
         }
+        const previousId = lastResourceId.get(resource);
+        if (previousId !== undefined) {
+          // This resource was reused from a pool. Its previous use is done.
+          pendingOperations.delete(previousId);
+          pendingOperationsRegistry.unregister(resource);
+        }
+        lastResourceId.set(resource, asyncId);
+        pendingOperationsRegistry.register(resource, asyncId, resource);
         pendingOperations.set(asyncId, node);
       },
       before(asyncId: number): void {
@@ -430,12 +458,6 @@ export function initAsyncDebugInfo(): void {
             beforeExecution(node);
           }
         }
-      },
-
-      destroy(asyncId: number): void {
-        // If we needed the meta data from this operation we should have already
-        // extracted it or it should be part of a chain of triggers.
-        pendingOperations.delete(asyncId);
       },
     }).enable();
   }
