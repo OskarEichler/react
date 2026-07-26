@@ -180,6 +180,29 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
       }
       return result;
     }
+    // Leaves delivered through a userland thenable: their io entries
+    // describe whatever context settled the thenable, not the leaf.
+    const foreignLeaves = new Set();
+    // Leaves settled in another leaf's io callback: the driver settles a
+    // batch back to back in the context of the batch's last io.
+    const foreignSettles = new Set();
+    function trackForeignValue(promise) {
+      promise.then(
+        function (value) {
+          if (typeof value === 'string' && /^v[0-9]+$/.test(value)) {
+            foreignLeaves.add(value);
+          } else if (
+            value !== null &&
+            typeof value === 'object' &&
+            typeof value.id === 'string'
+          ) {
+            foreignLeaves.add(value.id);
+          }
+        },
+        function (error) {},
+      );
+      return promise;
+    }
     function withComponent(componentName, source) {
       const parentChain = currentChain;
       currentChain = [componentName];
@@ -226,6 +249,31 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
       });
     }
 
+    // Throws for any property access outside the thenable protocol, like
+    // userland reference proxies without the serialization exemptions our
+    // own ClientReference proxies carry.
+    function proxyThenable(thenable) {
+      return new Proxy(thenable, {
+        get(target, key) {
+          if (
+            key === 'then' ||
+            key === 'status' ||
+            key === 'value' ||
+            key === 'reason' ||
+            key === 'constructor' ||
+            typeof key === 'symbol'
+          ) {
+            return target[key];
+          }
+          throw new Error('touched forbidden key ' + String(key));
+        },
+        set(target, key, value) {
+          target[key] = value;
+          return true;
+        },
+      });
+    }
+
     // A promise backed by one unit of real I/O whose resolution is parked
     // with the driver. The io kind is decided when the seed is built, never
     // when the leaf is created.
@@ -249,6 +297,7 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
           : id;
       const promise = new Promise((resolve, reject) => {
         pending.push({
+          id: id,
           io: useTimer ? waitForTimer : readFromFile,
           settle() {
             meta.settleIndex = settleCount++;
@@ -428,16 +477,16 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
         // driver like other leaves; resolves to more data.
         const inner = genSource(depth + 1);
         return named('queryThenable', function queryThenable() {
-          return {
+          return proxyThenable({
             then(resolve) {
               pending.push({
                 io: async function noIO() {},
                 settle() {
-                  resolve(retain(Promise.resolve(inner())));
+                  resolve(retain(trackForeignValue(Promise.resolve(inner()))));
                 },
               });
             },
-          };
+          });
         });
       }
       // A Promise subclass, like a polyfill or instrumented promise.
@@ -466,6 +515,10 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
       bumpSettleBatch,
       propLeaves,
       trackPropLeaves,
+      foreignLeaves,
+      foreignSettles,
+      trackForeignValue,
+      proxyThenable,
     };
   }
 
@@ -482,14 +535,24 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
       const Component = {
         [name]: function () {
           const value = ReactServer.use(
-            program.retain(
-              Promise.resolve(program.withComponent(name, source)),
-            ),
+            program.retain(program.withComponent(name, source)),
           );
           return name + ':' + String(value);
         },
       }[name];
       return Component;
+    }
+
+    function identity(x) {
+      return x;
+    }
+    function wrapPropInProxy(promise) {
+      const tracked = program.trackForeignValue(promise);
+      return program.proxyThenable({
+        then(resolve, reject) {
+          return tracked.then(resolve, reject);
+        },
+      });
     }
 
     function makeComponent(depth, options) {
@@ -550,13 +613,9 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
             ? 'text'
             : 'array';
 
-      // A promise started by the parent and awaited by the first child.
-      // TODO: Pass the source's raw result once debug info serialization
-      // survives props that throw on unexpected property access (like our
-      // own ClientReference proxies do). JSON.stringify's toJSON probe
-      // throws while the component's debug info is serialized, the server
-      // degrades the debug info to a string, and the client then corrupts
-      // the component's data chunk while failing to initialize it.
+      // A promise started by the parent and awaited by the first child,
+      // sometimes hidden behind a throwing proxy.
+      const proxyProp = rand.intBetween(0, 1) === 0;
       const propSource =
         children.length > 0 &&
         // use() components ignore their props, so a promise prop passed to
@@ -606,9 +665,14 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
               data:
                 i === 0 && propSource
                   ? program.retain(
-                      Promise.resolve(
+                      (proxyProp ? wrapPropInProxy : identity)(
                         program.trackPropLeaves(() =>
-                          program.withComponent(name, sources[0]),
+                          program.withComponent(
+                            name,
+                            proxyProp
+                              ? program.named('proxyProp', sources[0])
+                              : sources[0],
+                          ),
                         ),
                       ),
                     )
@@ -669,6 +733,9 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
           await batch[i].io();
         }
         for (let i = 0; i < batch.length; i++) {
+          if (i !== batch.length - 1 && batch[i].id != null) {
+            program.foreignSettles.add(batch[i].id);
+          }
           batch[i].settle();
           onSettle();
         }
@@ -730,6 +797,8 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
       componentRoots,
       componentCreators,
       leafMeta,
+      foreignLeaves,
+      foreignSettles,
       rootIndex,
       violations,
       leafSightings,
@@ -737,6 +806,15 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
     } = ctx;
     let lastTime = -Infinity;
     debugInfo.forEach(entry => {
+      if (
+        entry.awaited &&
+        entry.awaited.name === 'rsc stream' &&
+        typeof entry.awaited.end === 'number'
+      ) {
+        // Merged debug info from another chunk follows. Segments are
+        // individually ordered but their spans can overlap.
+        lastTime = -Infinity;
+      }
       if (typeof entry.time === 'number') {
         if (entry.time < lastTime) {
           violations.push(
@@ -835,6 +913,11 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
             violations.push('io resolved to unknown leaf ' + leafId);
           } else {
             leafSightings.set(leafId, (leafSightings.get(leafId) || 0) + 1);
+            if (foreignLeaves.has(leafId) || foreignSettles.has(leafId)) {
+              // This entry's io belongs to whatever settled the value, so
+              // the leaf-identity checks don't apply.
+              return;
+            }
             const frames = io.stack ? io.stack.map(frame => frame[0]) : [];
             // Pool io is named after the fs or timer API call, chained io
             // after the leaf constructor.
@@ -1114,6 +1197,8 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
         componentRoots,
         componentCreators,
         leafMeta: program.leafMeta,
+        foreignLeaves: program.foreignLeaves,
+        foreignSettles: program.foreignSettles,
         rootIndex: i,
         violations,
         leafSightings: new Map(),
@@ -1217,7 +1302,11 @@ describe('ReactFlightAsyncDebugInfoFuzz', () => {
           meta.chain.indexOf('loadAll') !== -1 ||
           meta.chain.indexOf('readPages') !== -1 ||
           meta.chain.indexOf('queryThenable') !== -1 ||
-          program.propLeaves.has(leafId)
+          // A value delivered through a userland thenable: React cannot see
+          // through it, so the io behind it never reaches the consumer.
+          meta.chain.indexOf('proxyProp') !== -1 ||
+          program.propLeaves.has(leafId) ||
+          program.foreignLeaves.has(leafId)
         ) {
           return;
         }
