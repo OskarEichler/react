@@ -4211,4 +4211,61 @@ describe('ReactFlightAsyncDebugInfo', () => {
       expect(ioNames).toContain('readFile');
     }
   });
+
+  it('does not turn a caught rejection in debug info into an unhandled rejection', async () => {
+    // A rejection that the server component caught still gets its value
+    // serialized into the debug info as a rejected promise. Subscribing to
+    // that value without a rejection handler, which is what getDebugInfo
+    // does, must not turn the already-handled error into an unhandled
+    // rejection. There is no explicit assertion for the leak: jest fails
+    // any test that leaks one.
+    function rejectAfterIO() {
+      return new Promise((_resolve, reject) => {
+        setTimeout(() => reject(new Error('boom')), 1);
+      });
+    }
+
+    async function Component() {
+      try {
+        await rejectAfterIO();
+      } catch (x) {
+        // The rejection is handled. The render succeeds.
+      }
+      return 'ok';
+    }
+
+    const stream = ReactServerDOMServer.renderToPipeableStream(
+      ReactServer.createElement(Component),
+      {},
+    );
+    const readable = new Stream.PassThrough(streamOptions);
+    const result = ReactServerDOMClient.createFromNodeStream(readable, {
+      moduleMap: {},
+      moduleLoading: {},
+    });
+    stream.pipe(readable);
+    expect(await result).toBe('ok');
+    await finishLoadingStream(readable);
+
+    if (
+      __DEV__ &&
+      gate(
+        flags =>
+          flags.enableComponentPerformanceTrack && flags.enableAsyncDebugInfo,
+      )
+    ) {
+      const rejectedValues = getDebugInfo(result)
+        .filter(entry => entry.awaited && entry.awaited.value)
+        .map(entry => entry.awaited.value)
+        .filter(value => value.reason !== undefined);
+      expect(rejectedValues.length).toBe(1);
+      expect(rejectedValues[0].reason.message).toBe('boom');
+    }
+
+    // Node reports a rejection as unhandled once the microtask queue of the
+    // current macrotask has drained without a handler getting attached. One
+    // timer hop moves past that point, so a leak fails this test instead of
+    // whichever test happens to run next.
+    await new Promise(resolve => setTimeout(resolve, 0));
+  });
 });

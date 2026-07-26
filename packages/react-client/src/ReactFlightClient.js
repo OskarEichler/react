@@ -253,6 +253,9 @@ function ReactPromise(status: any, value: any, reason: any) {
     this._debugInfo = [];
   }
 }
+
+function noop() {}
+
 // We subclass Promise.prototype so that we get other methods like .catch
 ReactPromise.prototype = Object.create(Promise.prototype) as any;
 // TODO: This doesn't return a new Promise chain unlike the real .then
@@ -291,7 +294,14 @@ ReactPromise.prototype.then = function <T>(
         rej(reason);
       };
     });
-    wrapperPromise.then(resolveCallback, rejectCallback);
+    // Subscriptions must all defer through the wrapper so they fire in
+    // registration order, even those that passed no rejection callback.
+    // Those could never handle the wrapper's rejection since .then()
+    // doesn't return a chained Promise, so swallow it, like in prod.
+    wrapperPromise.then(
+      resolveCallback,
+      typeof rejectCallback === 'function' ? rejectCallback : noop,
+    );
   }
   // The status might have changed after initialization.
   switch (chunk.status) {
