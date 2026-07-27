@@ -11,6 +11,8 @@
 import {patchSetImmediate} from '../../../../scripts/jest/patchSetImmediate';
 
 let React;
+let ReactServer;
+let cache;
 let ReactServerDOMServer;
 let ReactServerDOMClient;
 let Stream;
@@ -42,8 +44,9 @@ describe('ReactFlightAsyncDebugInfoExpiration', () => {
     jest.mock('react-server-dom-webpack/server', () =>
       jest.requireActual('react-server-dom-webpack/server.node'),
     );
-    require('react');
+    ReactServer = require('react');
     ReactServerDOMServer = require('react-server-dom-webpack/server');
+    cache = ReactServer.cache;
 
     jest.resetModules();
     jest.useRealTimers();
@@ -158,6 +161,134 @@ describe('ReactFlightAsyncDebugInfoExpiration', () => {
       )
     ) {
       expect(getDebugInfo(result).filter(entry => entry.awaited)).toEqual([]);
+    }
+  });
+
+  it('keeps history alive while a debug channel is still open', async () => {
+    // A bidirectional debug channel lets the client ask for more debug info
+    // after the response is done. The main stream closes but this request can
+    // still walk the graph, so its history has to stay put.
+    const debugChannel = new Stream.Duplex({
+      ...streamOptions,
+      read() {},
+      write(chunk, encoding, callback) {
+        callback();
+      },
+    });
+    async function Init() {
+      await delay(1);
+      return 'ok';
+    }
+    const initStream = ReactServerDOMServer.renderToPipeableStream(
+      <Init />,
+      {},
+      {filterStackFrame, debugChannel},
+    );
+    const initReadable = new Stream.PassThrough(streamOptions);
+    const initResult = ReactServerDOMClient.createFromNodeStream(initReadable, {
+      moduleMap: {},
+      moduleLoading: {},
+    });
+    initStream.pipe(initReadable);
+    expect(await initResult).toBe('ok');
+    await finishLoadingStream(initReadable);
+
+    async function fetchCachedData() {
+      await delay(5);
+      return 'hello';
+    }
+    const cachedStartTime =
+      // $FlowFixMe[prop-missing]
+      performance.timeOrigin + performance.now();
+    const cachedData = fetchCachedData();
+    await cachedData;
+
+    churnPastRetention();
+
+    async function Component() {
+      return 'data:' + (await cachedData);
+    }
+    const stream = ReactServerDOMServer.renderToPipeableStream(
+      <Component />,
+      {},
+      {
+        filterStackFrame,
+        startTime: cachedStartTime,
+      },
+    );
+    const readable = new Stream.PassThrough(streamOptions);
+    const result = ReactServerDOMClient.createFromNodeStream(readable, {
+      moduleMap: {},
+      moduleLoading: {},
+    });
+    stream.pipe(readable);
+    expect(await result).toBe('data:hello');
+    await finishLoadingStream(readable);
+
+    if (
+      __DEV__ &&
+      gate(
+        flags =>
+          flags.enableComponentPerformanceTrack && flags.enableAsyncDebugInfo,
+      )
+    ) {
+      // The fetch resolved after the first request started, so that request
+      // pinned it through the sweeps and it's still here.
+      const awaitedNames = getDebugInfo(result)
+        .filter(entry => entry.awaited)
+        .map(entry => entry.awaited.name);
+      expect(awaitedNames).toContain('setTimeout');
+    }
+  });
+
+  it('keeps debug info intact when history expires during the render', async () => {
+    const getData = cache(async function getData(text) {
+      await delay(1);
+      return text.toUpperCase();
+    });
+
+    // History expires while this render is still running. Anything the
+    // render itself can still emit must survive the sweeps.
+    async function Child() {
+      const greeting = await getData('hi');
+      return greeting + ', Seb';
+    }
+
+    async function Component() {
+      await getData('hi');
+      churnPastRetention();
+      return <Child />;
+    }
+
+    const stream = ReactServerDOMServer.renderToPipeableStream(
+      <Component />,
+      {},
+      {
+        filterStackFrame,
+      },
+    );
+    const readable = new Stream.PassThrough(streamOptions);
+    const result = ReactServerDOMClient.createFromNodeStream(readable, {
+      moduleMap: {},
+      moduleLoading: {},
+    });
+    stream.pipe(readable);
+    expect(await result).toBe('HI, Seb');
+    await finishLoadingStream(readable);
+
+    if (
+      __DEV__ &&
+      gate(
+        flags =>
+          flags.enableComponentPerformanceTrack && flags.enableAsyncDebugInfo,
+      )
+    ) {
+      // The cached entry resolved after this request started, so its awaited
+      // I/O info must survive the sweeps.
+      const awaitedNames = getDebugInfo(result)
+        .filter(entry => entry.awaited)
+        .map(entry => entry.awaited.name);
+      expect(awaitedNames).toContain('delay');
     }
   });
 });
