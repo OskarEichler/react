@@ -204,6 +204,7 @@ import {
 import {
   pushHiddenContext,
   reuseHiddenContextOnStack,
+  isCurrentTreeHidden,
 } from './ReactFiberHiddenContext';
 import {findFirstSuspended} from './ReactFiberSuspenseComponent';
 import {
@@ -1019,6 +1020,19 @@ function updateDehydratedActivityComponent(
     if (didReceiveUpdate || hasContextChanged) {
       // This boundary has changed since the first render. This means that we are now unable to
       // hydrate it. We might still be able to hydrate it using a higher priority lane.
+      if (isCurrentTreeHidden()) {
+        // This boundary is inside a hidden subtree, where all work is
+        // deferred until the tree is revealed. Selective hydration works by
+        // rendering the boundary at a higher priority before the update
+        // applies, so it can't make progress here; delaying the commit to
+        // wait for it would deadlock. Replacing hidden content isn't
+        // visible, so give up and client render.
+        return retryActivityComponentWithoutHydrating(
+          current,
+          workInProgress,
+          renderLanes,
+        );
+      }
       const root = getWorkInProgressRoot();
       if (root !== null) {
         const attemptHydrationAtLane = getBumpedLaneForHydration(
@@ -3028,6 +3042,19 @@ function updateDehydratedSuspenseComponent(
     if (didReceiveUpdate || hasContextChanged) {
       // This boundary has changed since the first render. This means that we are now unable to
       // hydrate it. We might still be able to hydrate it using a higher priority lane.
+      if (isCurrentTreeHidden()) {
+        // This boundary is inside a hidden subtree, where all work is
+        // deferred until the tree is revealed. Selective hydration works by
+        // rendering the boundary at a higher priority before the update
+        // applies, so it can't make progress here; delaying the commit to
+        // wait for it would deadlock. Replacing hidden content isn't
+        // visible, so give up and client render.
+        return retrySuspenseComponentWithoutHydrating(
+          current,
+          workInProgress,
+          renderLanes,
+        );
+      }
       const root = getWorkInProgressRoot();
       if (root !== null) {
         const attemptHydrationAtLane = getBumpedLaneForHydration(
