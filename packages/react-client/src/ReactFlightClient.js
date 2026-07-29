@@ -98,6 +98,8 @@ import {getOwnerStackByComponentInfoInDev} from 'shared/ReactComponentInfoStack'
 
 import hasOwnProperty from 'shared/hasOwnProperty';
 
+import getPrototypeOf from 'shared/getPrototypeOf';
+
 import {injectInternals} from './ReactFlightClientDevToolsHook';
 
 import {OMITTED_PROP_ERROR} from 'shared/ReactFlightPropertyAccess';
@@ -156,6 +158,9 @@ const ERRORED = 'rejected';
 const HALTED = 'halted'; // DEV-only. Means it never resolves even if connection closes.
 
 const __PROTO__ = '__proto__';
+
+const ObjectPrototype = Object.prototype;
+const ArrayPrototype = Array.prototype;
 
 type PendingChunk<T> = {
   status: 'pending',
@@ -2160,7 +2165,18 @@ function getOutlinedModel<T>(
             }
           }
         }
-        value = value[path[i]];
+        const name = path[i];
+        if (
+          typeof value === 'object' &&
+          value !== null &&
+          (getPrototypeOf(value) === ObjectPrototype ||
+            getPrototypeOf(value) === ArrayPrototype) &&
+          hasOwnProperty.call(value, name)
+        ) {
+          value = value[name];
+        } else {
+          throw new Error('Invalid reference.');
+        }
       }
 
       while (
