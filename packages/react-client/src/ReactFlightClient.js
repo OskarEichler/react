@@ -5359,14 +5359,16 @@ function reviveModel(
   }
   // Plain object
   for (const k in value) {
-    if (k === __PROTO__) {
-      delete (value as any)[k];
-    } else {
-      const walked = reviveModel(response, (value as any)[k], value, k);
-      if (walked !== undefined) {
-        (value as any)[k] = walked;
-      } else {
+    if (hasOwnProperty.call(value, k)) {
+      if (k === __PROTO__) {
         delete (value as any)[k];
+      } else {
+        const walked = reviveModel(response, (value as any)[k], value, k);
+        if (walked !== undefined) {
+          (value as any)[k] = walked;
+        } else {
+          delete (value as any)[k];
+        }
       }
     }
   }
