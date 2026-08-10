@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<14ac8d166f17695ad72902fc2dbe04e2>>
+ * @generated SignedSource<<618a0f7b7be5b5917e2c36c5e11fd00b>>
  */
 
 /*
@@ -32317,11 +32317,11 @@ __DEV__ &&
     };
     (function () {
       var isomorphicReactPackageVersion = React.version;
-      if ("19.3.0-native-fb-20425723-20260807" !== isomorphicReactPackageVersion)
+      if ("19.3.0-native-fb-807d21fd-20260810" !== isomorphicReactPackageVersion)
         throw Error(
           'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' +
             (isomorphicReactPackageVersion +
-              "\n  - react-dom:  19.3.0-native-fb-20425723-20260807\nLearn more: https://react.dev/warnings/version-mismatch")
+              "\n  - react-dom:  19.3.0-native-fb-807d21fd-20260810\nLearn more: https://react.dev/warnings/version-mismatch")
         );
     })();
     ("function" === typeof Map &&
@@ -32358,10 +32358,10 @@ __DEV__ &&
       !(function () {
         var internals = {
           bundleType: 1,
-          version: "19.3.0-native-fb-20425723-20260807",
+          version: "19.3.0-native-fb-807d21fd-20260810",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.3.0-native-fb-20425723-20260807"
+          reconcilerVersion: "19.3.0-native-fb-807d21fd-20260810"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -32428,14 +32428,8 @@ __DEV__ &&
       );
     exports.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
       Internals;
-    exports.browser = function () {
-      var recoverable = Error(
-        "Browser-only rendering was requested by `browser()`."
-      );
-      Object.defineProperty(recoverable, "$$typeof", {
-        value: REACT_RECOVERABLE_TYPE
-      });
-      return recoverable;
+    exports.browser = function (reason) {
+      return { $$typeof: REACT_RECOVERABLE_TYPE, _reason: reason };
     };
     exports.createPortal = function (children, container) {
       var key =
@@ -32845,7 +32839,7 @@ __DEV__ &&
     exports.useFormStatus = function () {
       return resolveDispatcher().useHostTransitionStatus();
     };
-    exports.version = "19.3.0-native-fb-20425723-20260807";
+    exports.version = "19.3.0-native-fb-807d21fd-20260810";
     "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
       "function" ===
         typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&

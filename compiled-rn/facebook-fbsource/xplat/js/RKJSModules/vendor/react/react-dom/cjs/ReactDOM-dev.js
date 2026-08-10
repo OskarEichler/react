@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<39d9c8734be630312b9f7c65023f80dc>>
+ * @generated SignedSource<<4750e6482127f1c9c7da1808707949eb>>
  */
 
 "use strict";
@@ -121,14 +121,8 @@ __DEV__ &&
       );
     exports.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
       Internals;
-    exports.browser = function () {
-      var recoverable = Error(
-        "Browser-only rendering was requested by `browser()`."
-      );
-      Object.defineProperty(recoverable, "$$typeof", {
-        value: REACT_RECOVERABLE_TYPE
-      });
-      return recoverable;
+    exports.browser = function (reason) {
+      return { $$typeof: REACT_RECOVERABLE_TYPE, _reason: reason };
     };
     exports.createPortal = function (children, container) {
       var key =
@@ -429,5 +423,5 @@ __DEV__ &&
     exports.useFormStatus = function () {
       return resolveDispatcher().useHostTransitionStatus();
     };
-    exports.version = "19.3.0-native-fb-20425723-20260807";
+    exports.version = "19.3.0-native-fb-807d21fd-20260810";
   })();
