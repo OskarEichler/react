@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<618a0f7b7be5b5917e2c36c5e11fd00b>>
+ * @generated SignedSource<<b1c3502bd52e80940a331d6016e0a525>>
  */
 
 /*
@@ -31847,12 +31847,7 @@ __DEV__ &&
               result[0] ||
               getFragmentParentInstanceOrContainerFiber(this._fragmentFiber)
             : result[0] || result[1];
-          if (null === fiber) {
-            console.warn(
-              "You are attempting to scroll a FragmentInstance that has no children, siblings, or parent. No scroll was performed."
-            );
-            return;
-          }
+          if (null === fiber) return;
           if (enableFragmentRefsTextNodes && 6 === fiber.tag) {
             alignToTop = getInstanceFromHostFiber(fiber);
             scrollTextNodeIntoView(alignToTop, resolvedAlignToTop);
@@ -32317,11 +32312,11 @@ __DEV__ &&
     };
     (function () {
       var isomorphicReactPackageVersion = React.version;
-      if ("19.3.0-native-fb-807d21fd-20260810" !== isomorphicReactPackageVersion)
+      if ("19.3.0-native-fb-37180110-20260810" !== isomorphicReactPackageVersion)
         throw Error(
           'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' +
             (isomorphicReactPackageVersion +
-              "\n  - react-dom:  19.3.0-native-fb-807d21fd-20260810\nLearn more: https://react.dev/warnings/version-mismatch")
+              "\n  - react-dom:  19.3.0-native-fb-37180110-20260810\nLearn more: https://react.dev/warnings/version-mismatch")
         );
     })();
     ("function" === typeof Map &&
@@ -32358,10 +32353,10 @@ __DEV__ &&
       !(function () {
         var internals = {
           bundleType: 1,
-          version: "19.3.0-native-fb-807d21fd-20260810",
+          version: "19.3.0-native-fb-37180110-20260810",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.3.0-native-fb-807d21fd-20260810"
+          reconcilerVersion: "19.3.0-native-fb-37180110-20260810"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -32839,7 +32834,7 @@ __DEV__ &&
     exports.useFormStatus = function () {
       return resolveDispatcher().useHostTransitionStatus();
     };
-    exports.version = "19.3.0-native-fb-807d21fd-20260810";
+    exports.version = "19.3.0-native-fb-37180110-20260810";
     "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
       "function" ===
         typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&
