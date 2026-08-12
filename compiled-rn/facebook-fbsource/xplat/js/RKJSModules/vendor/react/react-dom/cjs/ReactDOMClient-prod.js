@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<9a713e2d01fbf4ab9680ecd51248beba>>
+ * @generated SignedSource<<569acedc099ea0ca46fa94cd1026202e>>
  */
 
 /*
@@ -194,22 +194,32 @@ function getFragmentParentInstanceOrContainerFiber(fiber) {
   }
   return null;
 }
-function findFragmentInstanceOrTextInstanceSiblings(result, self, child) {
-  for (
-    var foundSelf =
-      3 < arguments.length && void 0 !== arguments[3] ? arguments[3] : !1;
-    null !== child;
-
-  ) {
-    if (child === self)
-      if (((foundSelf = !0), child.sibling)) child = child.sibling;
-      else return !0;
-    if (
+function getFragmentInstanceOrTextInstanceSiblings(fiber) {
+  var result = [null, null],
+    parentHostFiber = getFragmentParentInstanceOrContainerFiber(fiber);
+  if (null === parentHostFiber) return result;
+  findFragmentInstanceOrTextInstanceSiblings(
+    result,
+    fiber,
+    parentHostFiber.child,
+    { foundSelf: !1 }
+  );
+  return result;
+}
+function findFragmentInstanceOrTextInstanceSiblings(
+  result,
+  self,
+  child,
+  state
+) {
+  for (; null !== child; ) {
+    if (child === self) state.foundSelf = !0;
+    else if (
       5 === child.tag ||
       27 === child.tag ||
       (enableFragmentRefsTextNodes && 6 === child.tag)
     ) {
-      if (foundSelf) return (result[1] = child), !0;
+      if (state.foundSelf) return (result[1] = child), !0;
       result[0] = child;
     } else if (
       (22 !== child.tag || null === child.memoizedState) &&
@@ -217,7 +227,7 @@ function findFragmentInstanceOrTextInstanceSiblings(result, self, child) {
         result,
         self,
         child.child,
-        foundSelf
+        state
       )
     )
       return !0;
@@ -239,10 +249,6 @@ function getInstanceFromHostFiber(fiber) {
 }
 var searchTarget = null,
   searchBoundary = null;
-function findNextSibling(child) {
-  searchTarget = child;
-  return !0;
-}
 function isFiberPrecedingCheck(child, target, boundary) {
   return child === boundary
     ? !0
@@ -14595,20 +14601,20 @@ function debounceScrollEnd(targetInst, nativeEvent, nativeEventTarget) {
     (nativeEventTarget[internalScrollTimer] = targetInst));
 }
 for (
-  var i$jscomp$inline_1716 = 0;
-  i$jscomp$inline_1716 < simpleEventPluginEvents.length;
-  i$jscomp$inline_1716++
+  var i$jscomp$inline_1711 = 0;
+  i$jscomp$inline_1711 < simpleEventPluginEvents.length;
+  i$jscomp$inline_1711++
 ) {
-  var eventName$jscomp$inline_1717 =
-      simpleEventPluginEvents[i$jscomp$inline_1716],
-    domEventName$jscomp$inline_1718 =
-      eventName$jscomp$inline_1717.toLowerCase(),
-    capitalizedEvent$jscomp$inline_1719 =
-      eventName$jscomp$inline_1717[0].toUpperCase() +
-      eventName$jscomp$inline_1717.slice(1);
+  var eventName$jscomp$inline_1712 =
+      simpleEventPluginEvents[i$jscomp$inline_1711],
+    domEventName$jscomp$inline_1713 =
+      eventName$jscomp$inline_1712.toLowerCase(),
+    capitalizedEvent$jscomp$inline_1714 =
+      eventName$jscomp$inline_1712[0].toUpperCase() +
+      eventName$jscomp$inline_1712.slice(1);
   registerSimpleEvent(
-    domEventName$jscomp$inline_1718,
-    "on" + capitalizedEvent$jscomp$inline_1719
+    domEventName$jscomp$inline_1713,
+    "on" + capitalizedEvent$jscomp$inline_1714
   );
 }
 registerSimpleEvent(ANIMATION_END, "onAnimationEnd");
@@ -17256,13 +17262,7 @@ FragmentInstance.prototype.compareDocumentPosition = function (otherNode) {
     parentHostInstance === otherNode
       ? (parentHostFiber = Node.DOCUMENT_POSITION_CONTAINS)
       : parentResult & Node.DOCUMENT_POSITION_CONTAINED_BY &&
-        (traverseVisibleInstancesAndTextInstances(
-          children.sibling,
-          !1,
-          findNextSibling
-        ),
-        (children = searchTarget),
-        (searchTarget = null),
+        ((children = getFragmentInstanceOrTextInstanceSiblings(children)[1]),
         null === children
           ? (parentHostFiber = Node.DOCUMENT_POSITION_PRECEDING)
           : ((otherNode =
@@ -17456,48 +17456,44 @@ enableFragmentRefsScrollIntoView &&
     );
     var resolvedAlignToTop = !1 !== alignToTop;
     if (0 === children.length) {
-      var fiber = this._fragmentFiber,
-        result = [null, null],
-        parentHostFiber = getFragmentParentInstanceOrContainerFiber(fiber);
-      null !== parentHostFiber &&
-        findFragmentInstanceOrTextInstanceSiblings(
-          result,
-          fiber,
-          parentHostFiber.child
-        );
-      fiber = resolvedAlignToTop
-        ? result[1] ||
-          result[0] ||
+      var hostSiblings = getFragmentInstanceOrTextInstanceSiblings(
+        this._fragmentFiber
+      );
+      hostSiblings = resolvedAlignToTop
+        ? hostSiblings[1] ||
+          hostSiblings[0] ||
           getFragmentParentInstanceOrContainerFiber(this._fragmentFiber)
-        : result[0] || result[1];
-      if (null === fiber) return;
-      if (enableFragmentRefsTextNodes && 6 === fiber.tag) {
-        alignToTop = getInstanceFromHostFiber(fiber);
+        : hostSiblings[0] || hostSiblings[1];
+      if (null === hostSiblings) return;
+      if (enableFragmentRefsTextNodes && 6 === hostSiblings.tag) {
+        alignToTop = getInstanceFromHostFiber(hostSiblings);
         scrollTextNodeIntoView(alignToTop, resolvedAlignToTop);
         return;
       }
-      fiber = getInstanceFromHostFiber(fiber);
-      if (9 !== fiber.nodeType) {
-        if (11 === fiber.nodeType) {
-          resolvedAlignToTop = "host" in fiber ? fiber.host : null;
+      hostSiblings = getInstanceFromHostFiber(hostSiblings);
+      if (9 !== hostSiblings.nodeType) {
+        if (11 === hostSiblings.nodeType) {
+          resolvedAlignToTop =
+            "host" in hostSiblings ? hostSiblings.host : null;
           null !== resolvedAlignToTop &&
             resolvedAlignToTop.scrollIntoView(alignToTop);
           return;
         }
-        fiber.scrollIntoView(alignToTop);
+        hostSiblings.scrollIntoView(alignToTop);
       }
     }
     for (
-      fiber = resolvedAlignToTop ? children.length - 1 : 0;
-      fiber !== (resolvedAlignToTop ? -1 : children.length);
+      hostSiblings = resolvedAlignToTop ? children.length - 1 : 0;
+      hostSiblings !== (resolvedAlignToTop ? -1 : children.length);
 
-    )
-      (result = children[fiber]),
-        enableFragmentRefsTextNodes && 6 === result.tag
-          ? ((result = getInstanceFromHostFiber(result)),
-            scrollTextNodeIntoView(result, resolvedAlignToTop))
-          : getInstanceFromHostFiber(result).scrollIntoView(alignToTop),
-        (fiber += resolvedAlignToTop ? -1 : 1);
+    ) {
+      var child = children[hostSiblings];
+      enableFragmentRefsTextNodes && 6 === child.tag
+        ? ((child = getInstanceFromHostFiber(child)),
+          scrollTextNodeIntoView(child, resolvedAlignToTop))
+        : getInstanceFromHostFiber(child).scrollIntoView(alignToTop);
+      hostSiblings += resolvedAlignToTop ? -1 : 1;
+    }
   });
 function addFragmentHandleToFiber(child, fragmentInstance) {
   enableFragmentRefsInstanceHandles &&
@@ -19429,16 +19425,16 @@ ReactDOMHydrationRoot.prototype.unstable_scheduleHydration = function (target) {
     0 === i && attemptExplicitHydrationTarget(target);
   }
 };
-var isomorphicReactPackageVersion$jscomp$inline_2143 = React.version;
+var isomorphicReactPackageVersion$jscomp$inline_2135 = React.version;
 if (
-  "19.3.0-native-fb-278d318d-20260811" !==
-  isomorphicReactPackageVersion$jscomp$inline_2143
+  "19.3.0-native-fb-db4ee659-20260811" !==
+  isomorphicReactPackageVersion$jscomp$inline_2135
 )
   throw Error(
     formatProdErrorMessage(
       527,
-      isomorphicReactPackageVersion$jscomp$inline_2143,
-      "19.3.0-native-fb-278d318d-20260811"
+      isomorphicReactPackageVersion$jscomp$inline_2135,
+      "19.3.0-native-fb-db4ee659-20260811"
     )
   );
 ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
@@ -19458,24 +19454,24 @@ ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
     null === componentOrElement ? null : componentOrElement.stateNode;
   return componentOrElement;
 };
-var internals$jscomp$inline_2720 = {
+var internals$jscomp$inline_2708 = {
   bundleType: 0,
-  version: "19.3.0-native-fb-278d318d-20260811",
+  version: "19.3.0-native-fb-db4ee659-20260811",
   rendererPackageName: "react-dom",
   currentDispatcherRef: ReactSharedInternals,
-  reconcilerVersion: "19.3.0-native-fb-278d318d-20260811"
+  reconcilerVersion: "19.3.0-native-fb-db4ee659-20260811"
 };
 if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
-  var hook$jscomp$inline_2721 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
+  var hook$jscomp$inline_2709 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
   if (
-    !hook$jscomp$inline_2721.isDisabled &&
-    hook$jscomp$inline_2721.supportsFiber
+    !hook$jscomp$inline_2709.isDisabled &&
+    hook$jscomp$inline_2709.supportsFiber
   )
     try {
-      (rendererID = hook$jscomp$inline_2721.inject(
-        internals$jscomp$inline_2720
+      (rendererID = hook$jscomp$inline_2709.inject(
+        internals$jscomp$inline_2708
       )),
-        (injectedHook = hook$jscomp$inline_2721);
+        (injectedHook = hook$jscomp$inline_2709);
     } catch (err) {}
 }
 exports.createRoot = function (container, options) {
@@ -19570,4 +19566,4 @@ exports.hydrateRoot = function (container, initialChildren, options) {
   listenToAllSupportedEvents(container);
   return new ReactDOMHydrationRoot(initialChildren);
 };
-exports.version = "19.3.0-native-fb-278d318d-20260811";
+exports.version = "19.3.0-native-fb-db4ee659-20260811";
