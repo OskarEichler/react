@@ -33152,7 +33152,10 @@ __DEV__ &&
         (null !== eventListeners && 0 < eventListeners.length) ||
         !event.bubbles
       ) {
-        var temp = document.createTextNode("");
+        var temp =
+          parentHostFiber.nodeType === DOCUMENT_NODE
+            ? parentHostFiber.createComment("")
+            : document.createTextNode("");
         if (eventListeners)
           for (var i = 0; i < eventListeners.length; i++) {
             var _eventListeners$i = eventListeners[i];
@@ -33740,11 +33743,11 @@ __DEV__ &&
       return_targetInst = null;
     (function () {
       var isomorphicReactPackageVersion = React.version;
-      if ("19.3.0-www-modern-18c30e7a-20260811" !== isomorphicReactPackageVersion)
+      if ("19.3.0-www-modern-305feb90-20260811" !== isomorphicReactPackageVersion)
         throw Error(
           'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' +
             (isomorphicReactPackageVersion +
-              "\n  - react-dom:  19.3.0-www-modern-18c30e7a-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
+              "\n  - react-dom:  19.3.0-www-modern-305feb90-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
         );
     })();
     ("function" === typeof Map &&
@@ -33787,10 +33790,10 @@ __DEV__ &&
       !(function () {
         var internals = {
           bundleType: 1,
-          version: "19.3.0-www-modern-18c30e7a-20260811",
+          version: "19.3.0-www-modern-305feb90-20260811",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.3.0-www-modern-18c30e7a-20260811"
+          reconcilerVersion: "19.3.0-www-modern-305feb90-20260811"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -34581,5 +34584,5 @@ __DEV__ &&
     exports.useFormStatus = function () {
       return resolveDispatcher().useHostTransitionStatus();
     };
-    exports.version = "19.3.0-www-modern-18c30e7a-20260811";
+    exports.version = "19.3.0-www-modern-305feb90-20260811";
   })();
