@@ -9896,36 +9896,6 @@ function commitProfilerPostCommit(
     captureCommitPhaseError(finishedWork, finishedWork.return, error);
   }
 }
-function commitHostMount(finishedWork) {
-  var type = finishedWork.type,
-    props = finishedWork.memoizedProps,
-    instance = finishedWork.stateNode;
-  try {
-    a: switch (type) {
-      case "button":
-      case "input":
-      case "select":
-      case "textarea":
-        props.autoFocus && instance.focus();
-        break a;
-      case "img":
-        props.src
-          ? (instance.src = props.src)
-          : props.srcSet && (instance.srcset = props.srcSet);
-    }
-  } catch (error) {
-    captureCommitPhaseError(finishedWork, finishedWork.return, error);
-  }
-}
-function commitHostUpdate(finishedWork, newProps, oldProps) {
-  try {
-    var domElement = finishedWork.stateNode;
-    updateProperties(domElement, finishedWork.type, oldProps, newProps);
-    updateFiberProps(domElement, newProps);
-  } catch (error) {
-    captureCommitPhaseError(finishedWork, finishedWork.return, error);
-  }
-}
 function commitNewChildToFragmentInstances(fiber, parentFragmentInstances) {
   if (
     (5 === fiber.tag ||
@@ -9963,6 +9933,42 @@ function commitFragmentInstanceDeletionEffects(fiber) {
     parent = parent.return;
   }
 }
+function isFragmentInstanceHostBoundary(fiber) {
+  return 5 === fiber.tag || 3 === fiber.tag || 27 === fiber.tag;
+}
+function isFragmentInstanceParent(fiber) {
+  return fiber && 7 === fiber.tag && null !== fiber.stateNode;
+}
+function commitHostMount(finishedWork) {
+  var type = finishedWork.type,
+    props = finishedWork.memoizedProps,
+    instance = finishedWork.stateNode;
+  try {
+    a: switch (type) {
+      case "button":
+      case "input":
+      case "select":
+      case "textarea":
+        props.autoFocus && instance.focus();
+        break a;
+      case "img":
+        props.src
+          ? (instance.src = props.src)
+          : props.srcSet && (instance.srcset = props.srcSet);
+    }
+  } catch (error) {
+    captureCommitPhaseError(finishedWork, finishedWork.return, error);
+  }
+}
+function commitHostUpdate(finishedWork, newProps, oldProps) {
+  try {
+    var domElement = finishedWork.stateNode;
+    updateProperties(domElement, finishedWork.type, oldProps, newProps);
+    updateFiberProps(domElement, newProps);
+  } catch (error) {
+    captureCommitPhaseError(finishedWork, finishedWork.return, error);
+  }
+}
 function isHostParent(fiber) {
   return (
     5 === fiber.tag ||
@@ -9971,12 +9977,6 @@ function isHostParent(fiber) {
     (27 === fiber.tag && isSingletonScope(fiber.type)) ||
     4 === fiber.tag
   );
-}
-function isFragmentInstanceHostBoundary(fiber) {
-  return 5 === fiber.tag || 3 === fiber.tag || 27 === fiber.tag;
-}
-function isFragmentInstanceParent(fiber) {
-  return fiber && 7 === fiber.tag && null !== fiber.stateNode;
 }
 function getHostSibling(fiber) {
   a: for (;;) {
@@ -12256,38 +12256,40 @@ function commitReconciliationEffects(finishedWork) {
   if (flags & 2) {
     try {
       for (
-        var hostParentFiber,
-          parentFragmentInstances = null,
-          collectFragmentInstances = enableFragmentRefs,
-          parentFiber = finishedWork.return;
+        var hostParentFiber, parentFiber = finishedWork.return;
         null !== parentFiber;
 
       ) {
-        if (collectFragmentInstances && isFragmentInstanceParent(parentFiber)) {
-          var fragmentInstance = parentFiber.stateNode;
-          null === parentFragmentInstances
-            ? (parentFragmentInstances = [fragmentInstance])
-            : parentFragmentInstances.push(fragmentInstance);
+        if (isHostParent(parentFiber)) {
+          hostParentFiber = parentFiber;
+          break;
         }
-        void 0 === hostParentFiber &&
-          isHostParent(parentFiber) &&
-          (hostParentFiber = parentFiber);
-        collectFragmentInstances &&
-          isFragmentInstanceHostBoundary(parentFiber) &&
-          (collectFragmentInstances = !1);
-        if (void 0 !== hostParentFiber && !collectFragmentInstances) break;
         parentFiber = parentFiber.return;
       }
+      if (enableFragmentRefs) {
+        parentFiber = null;
+        for (var parent = finishedWork.return; null !== parent; ) {
+          if (isFragmentInstanceParent(parent)) {
+            var fragmentInstance = parent.stateNode;
+            null === parentFiber
+              ? (parentFiber = [fragmentInstance])
+              : parentFiber.push(fragmentInstance);
+          }
+          if (isFragmentInstanceHostBoundary(parent)) break;
+          parent = parent.return;
+        }
+        var JSCompiler_temp = parentFiber;
+      } else JSCompiler_temp = null;
       if (null == hostParentFiber) throw Error(formatProdErrorMessage(160));
       switch (hostParentFiber.tag) {
         case 27:
-          var parent = hostParentFiber.stateNode,
+          var parent$jscomp$0 = hostParentFiber.stateNode,
             before = getHostSibling(finishedWork);
           insertOrAppendPlacementNode(
             finishedWork,
             before,
-            parent,
-            parentFragmentInstances
+            parent$jscomp$0,
+            JSCompiler_temp
           );
           break;
         case 5:
@@ -12299,7 +12301,7 @@ function commitReconciliationEffects(finishedWork) {
             finishedWork,
             before$182,
             parent$181,
-            parentFragmentInstances
+            JSCompiler_temp
           );
           break;
         case 3:
@@ -12310,7 +12312,7 @@ function commitReconciliationEffects(finishedWork) {
             finishedWork,
             before$184,
             parent$183,
-            parentFragmentInstances
+            JSCompiler_temp
           );
           break;
         default:
@@ -22562,14 +22564,14 @@ function getCrossOriginStringAs(as, input) {
 }
 var isomorphicReactPackageVersion$jscomp$inline_2397 = React.version;
 if (
-  "19.3.0-www-modern-fdaa617c-20260811" !==
+  "19.3.0-www-modern-22e4f993-20260811" !==
   isomorphicReactPackageVersion$jscomp$inline_2397
 )
   throw Error(
     formatProdErrorMessage(
       527,
       isomorphicReactPackageVersion$jscomp$inline_2397,
-      "19.3.0-www-modern-fdaa617c-20260811"
+      "19.3.0-www-modern-22e4f993-20260811"
     )
   );
 Internals.findDOMNode = function (componentOrElement) {
@@ -22587,25 +22589,25 @@ Internals.Events = [
 ];
 var internals$jscomp$inline_2399 = {
   bundleType: 0,
-  version: "19.3.0-www-modern-fdaa617c-20260811",
+  version: "19.3.0-www-modern-22e4f993-20260811",
   rendererPackageName: "react-dom",
   currentDispatcherRef: ReactSharedInternals,
-  reconcilerVersion: "19.3.0-www-modern-fdaa617c-20260811"
+  reconcilerVersion: "19.3.0-www-modern-22e4f993-20260811"
 };
 enableSchedulingProfiler &&
   ((internals$jscomp$inline_2399.getLaneLabelMap = getLaneLabelMap),
   (internals$jscomp$inline_2399.injectProfilingHooks = injectProfilingHooks));
 if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
-  var hook$jscomp$inline_2932 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
+  var hook$jscomp$inline_2930 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
   if (
-    !hook$jscomp$inline_2932.isDisabled &&
-    hook$jscomp$inline_2932.supportsFiber
+    !hook$jscomp$inline_2930.isDisabled &&
+    hook$jscomp$inline_2930.supportsFiber
   )
     try {
-      (rendererID = hook$jscomp$inline_2932.inject(
+      (rendererID = hook$jscomp$inline_2930.inject(
         internals$jscomp$inline_2399
       )),
-        (injectedHook = hook$jscomp$inline_2932);
+        (injectedHook = hook$jscomp$inline_2930);
     } catch (err) {}
 }
 function defaultOnDefaultTransitionIndicator() {
@@ -23035,7 +23037,7 @@ exports.useFormState = function (action, initialState, permalink) {
 exports.useFormStatus = function () {
   return ReactSharedInternals.H.useHostTransitionStatus();
 };
-exports.version = "19.3.0-www-modern-fdaa617c-20260811";
+exports.version = "19.3.0-www-modern-22e4f993-20260811";
 "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
   "function" ===
     typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&

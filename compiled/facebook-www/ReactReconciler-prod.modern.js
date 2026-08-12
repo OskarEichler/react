@@ -7786,6 +7786,38 @@ module.exports = function ($$$config) {
       ? (viewTransitionMutationContext = !0)
       : (rootMutationContext = !0);
   }
+  function commitNewChildToFragmentInstances(fiber, parentFragmentInstances) {
+    if (
+      (5 === fiber.tag ||
+        27 === fiber.tag ||
+        (enableFragmentRefsTextNodes && 6 === fiber.tag)) &&
+      null === fiber.alternate &&
+      null !== parentFragmentInstances
+    )
+      for (var i = 0; i < parentFragmentInstances.length; i++)
+        commitNewChildToFragmentInstance(
+          fiber.stateNode,
+          parentFragmentInstances[i]
+        );
+  }
+  function commitFragmentInstanceDeletionEffects(fiber) {
+    for (var parent = fiber.return; null !== parent; ) {
+      isFragmentInstanceParent(parent) &&
+        deleteChildFromFragmentInstance(fiber.stateNode, parent.stateNode);
+      if (isFragmentInstanceHostBoundary(parent)) break;
+      parent = parent.return;
+    }
+  }
+  function isFragmentInstanceHostBoundary(fiber) {
+    return (
+      5 === fiber.tag ||
+      3 === fiber.tag ||
+      (supportsSingletons ? 27 === fiber.tag : !1)
+    );
+  }
+  function isFragmentInstanceParent(fiber) {
+    return fiber && 7 === fiber.tag && null !== fiber.stateNode;
+  }
   function commitHostMount(finishedWork) {
     var type = finishedWork.type,
       props = finishedWork.memoizedProps,
@@ -7809,28 +7841,6 @@ module.exports = function ($$$config) {
       captureCommitPhaseError(finishedWork, finishedWork.return, error);
     }
   }
-  function commitNewChildToFragmentInstances(fiber, parentFragmentInstances) {
-    if (
-      (5 === fiber.tag ||
-        27 === fiber.tag ||
-        (enableFragmentRefsTextNodes && 6 === fiber.tag)) &&
-      null === fiber.alternate &&
-      null !== parentFragmentInstances
-    )
-      for (var i = 0; i < parentFragmentInstances.length; i++)
-        commitNewChildToFragmentInstance(
-          fiber.stateNode,
-          parentFragmentInstances[i]
-        );
-  }
-  function commitFragmentInstanceDeletionEffects(fiber) {
-    for (var parent = fiber.return; null !== parent; ) {
-      isFragmentInstanceParent(parent) &&
-        deleteChildFromFragmentInstance(fiber.stateNode, parent.stateNode);
-      if (isFragmentInstanceHostBoundary(parent)) break;
-      parent = parent.return;
-    }
-  }
   function isHostParent(fiber) {
     return (
       5 === fiber.tag ||
@@ -7841,16 +7851,6 @@ module.exports = function ($$$config) {
         : !1) ||
       4 === fiber.tag
     );
-  }
-  function isFragmentInstanceHostBoundary(fiber) {
-    return (
-      5 === fiber.tag ||
-      3 === fiber.tag ||
-      (supportsSingletons ? 27 === fiber.tag : !1)
-    );
-  }
-  function isFragmentInstanceParent(fiber) {
-    return fiber && 7 === fiber.tag && null !== fiber.stateNode;
   }
   function getHostSibling(fiber) {
     a: for (;;) {
@@ -9845,43 +9845,42 @@ module.exports = function ($$$config) {
     if (flags & 2) {
       try {
         for (
-          var hostParentFiber,
-            parentFragmentInstances = null,
-            collectFragmentInstances = enableFragmentRefs,
-            parentFiber = finishedWork.return;
+          var hostParentFiber, parentFiber = finishedWork.return;
           null !== parentFiber;
 
         ) {
-          if (
-            collectFragmentInstances &&
-            isFragmentInstanceParent(parentFiber)
-          ) {
-            var fragmentInstance = parentFiber.stateNode;
-            null === parentFragmentInstances
-              ? (parentFragmentInstances = [fragmentInstance])
-              : parentFragmentInstances.push(fragmentInstance);
+          if (isHostParent(parentFiber)) {
+            hostParentFiber = parentFiber;
+            break;
           }
-          void 0 === hostParentFiber &&
-            isHostParent(parentFiber) &&
-            (hostParentFiber = parentFiber);
-          collectFragmentInstances &&
-            isFragmentInstanceHostBoundary(parentFiber) &&
-            (collectFragmentInstances = !1);
-          if (void 0 !== hostParentFiber && !collectFragmentInstances) break;
           parentFiber = parentFiber.return;
         }
+        if (enableFragmentRefs) {
+          parentFiber = null;
+          for (var parent = finishedWork.return; null !== parent; ) {
+            if (isFragmentInstanceParent(parent)) {
+              var fragmentInstance = parent.stateNode;
+              null === parentFiber
+                ? (parentFiber = [fragmentInstance])
+                : parentFiber.push(fragmentInstance);
+            }
+            if (isFragmentInstanceHostBoundary(parent)) break;
+            parent = parent.return;
+          }
+          var JSCompiler_temp = parentFiber;
+        } else JSCompiler_temp = null;
         if (supportsMutation) {
           if (null == hostParentFiber) throw Error(formatProdErrorMessage(160));
           switch (hostParentFiber.tag) {
             case 27:
               if (supportsSingletons) {
-                var parent = hostParentFiber.stateNode,
+                var parent$jscomp$0 = hostParentFiber.stateNode,
                   before = getHostSibling(finishedWork);
                 insertOrAppendPlacementNode(
                   finishedWork,
                   before,
-                  parent,
-                  parentFragmentInstances
+                  parent$jscomp$0,
+                  JSCompiler_temp
                 );
                 break;
               }
@@ -9894,7 +9893,7 @@ module.exports = function ($$$config) {
                 finishedWork,
                 before$144,
                 parent$143,
-                parentFragmentInstances
+                JSCompiler_temp
               );
               break;
             case 3:
@@ -9905,7 +9904,7 @@ module.exports = function ($$$config) {
                 finishedWork,
                 before$146,
                 parent$145,
-                parentFragmentInstances
+                JSCompiler_temp
               );
               break;
             default:
@@ -9915,7 +9914,7 @@ module.exports = function ($$$config) {
           enableFragmentRefs &&
             commitImmutablePlacementNodeToFragmentInstances(
               finishedWork,
-              parentFragmentInstances
+              JSCompiler_temp
             );
       } catch (error) {
         captureCommitPhaseError(finishedWork, finishedWork.return, error);
@@ -14465,7 +14464,7 @@ module.exports = function ($$$config) {
       version: rendererVersion,
       rendererPackageName: rendererPackageName,
       currentDispatcherRef: ReactSharedInternals,
-      reconcilerVersion: "19.3.0-www-modern-fdaa617c-20260811"
+      reconcilerVersion: "19.3.0-www-modern-22e4f993-20260811"
     };
     null !== extraDevToolsConfig &&
       (internals.rendererConfig = extraDevToolsConfig);
