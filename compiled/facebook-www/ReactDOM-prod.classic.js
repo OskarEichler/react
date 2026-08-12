@@ -9302,21 +9302,20 @@ function commitFragmentInstanceDeletionEffects(fiber) {
   for (var parent = fiber.return; null !== parent; ) {
     if (isFragmentInstanceParent(parent)) {
       var fragmentInstance = parent.stateNode;
-      var childInstance = fiber.stateNode;
-      if (3 !== childInstance.nodeType) {
-        var eventListeners = fragmentInstance._eventListeners;
-        if (null !== eventListeners)
-          for (var i = 0; i < eventListeners.length; i++) {
-            var _eventListeners$i4 = eventListeners[i];
-            childInstance.removeEventListener(
-              _eventListeners$i4.type,
-              _eventListeners$i4.listener,
-              _eventListeners$i4.optionsOrUseCapture
-            );
-          }
+      var childInstance = fiber.stateNode,
+        eventListeners = fragmentInstance._eventListeners;
+      if (null !== eventListeners)
+        for (var i = 0; i < eventListeners.length; i++) {
+          var _eventListeners$i4 = eventListeners[i];
+          childInstance.removeEventListener(
+            _eventListeners$i4.type,
+            _eventListeners$i4.listener,
+            _eventListeners$i4.optionsOrUseCapture
+          );
+        }
+      3 !== childInstance.nodeType &&
         null != childInstance.reactFragments &&
-          childInstance.reactFragments.delete(fragmentInstance);
-      }
+        childInstance.reactFragments.delete(fragmentInstance);
     }
     if (isFragmentInstanceHostParent(parent)) break;
     parent = parent.return;
@@ -18771,23 +18770,22 @@ function addFragmentHandleToInstance(instance, fragmentInstance) {
   instance.reactFragments.add(fragmentInstance);
 }
 function commitNewChildToFragmentInstance(childInstance, fragmentInstance) {
-  if (3 !== childInstance.nodeType) {
-    var eventListeners = fragmentInstance._eventListeners;
-    if (null !== eventListeners)
-      for (var i = 0; i < eventListeners.length; i++) {
-        var _eventListeners$i3 = eventListeners[i];
-        childInstance.addEventListener(
-          _eventListeners$i3.type,
-          _eventListeners$i3.listener,
-          _eventListeners$i3.optionsOrUseCapture
-        );
-      }
-    null !== fragmentInstance._observers &&
+  var eventListeners = fragmentInstance._eventListeners;
+  if (null !== eventListeners)
+    for (var i = 0; i < eventListeners.length; i++) {
+      var _eventListeners$i3 = eventListeners[i];
+      childInstance.addEventListener(
+        _eventListeners$i3.type,
+        _eventListeners$i3.listener,
+        _eventListeners$i3.optionsOrUseCapture
+      );
+    }
+  3 !== childInstance.nodeType &&
+    (null !== fragmentInstance._observers &&
       fragmentInstance._observers.forEach(function (observer) {
         observer.observe(childInstance);
-      });
-    addFragmentHandleToInstance(childInstance, fragmentInstance);
-  }
+      }),
+    addFragmentHandleToInstance(childInstance, fragmentInstance));
 }
 function clearContainerSparingly(container) {
   var nextNode = container.firstChild;
@@ -20654,14 +20652,14 @@ function getCrossOriginStringAs(as, input) {
 }
 var isomorphicReactPackageVersion$jscomp$inline_2060 = React.version;
 if (
-  "19.3.0-www-classic-809280d5-20260811" !==
+  "19.3.0-www-classic-18c30e7a-20260811" !==
   isomorphicReactPackageVersion$jscomp$inline_2060
 )
   throw Error(
     formatProdErrorMessage(
       527,
       isomorphicReactPackageVersion$jscomp$inline_2060,
-      "19.3.0-www-classic-809280d5-20260811"
+      "19.3.0-www-classic-18c30e7a-20260811"
     )
   );
 Internals.findDOMNode = function (componentOrElement) {
@@ -20679,10 +20677,10 @@ Internals.Events = [
 ];
 var internals$jscomp$inline_2603 = {
   bundleType: 0,
-  version: "19.3.0-www-classic-809280d5-20260811",
+  version: "19.3.0-www-classic-18c30e7a-20260811",
   rendererPackageName: "react-dom",
   currentDispatcherRef: ReactSharedInternals,
-  reconcilerVersion: "19.3.0-www-classic-809280d5-20260811"
+  reconcilerVersion: "19.3.0-www-classic-18c30e7a-20260811"
 };
 if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
   var hook$jscomp$inline_2604 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
@@ -21123,4 +21121,4 @@ exports.useFormState = function (action, initialState, permalink) {
 exports.useFormStatus = function () {
   return ReactSharedInternals.H.useHostTransitionStatus();
 };
-exports.version = "19.3.0-www-classic-809280d5-20260811";
+exports.version = "19.3.0-www-classic-18c30e7a-20260811";
