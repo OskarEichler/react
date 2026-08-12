@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<aadd56a10f2b8d63d108ad816b1d6d5f>>
+ * @generated SignedSource<<4fd16d1e163bddcb0fbe4f62aae700a4>>
  */
 
 /*
@@ -31571,23 +31571,23 @@ __DEV__ &&
       optionsOrUseCapture
     ) {
       var listeners = this._eventListeners;
-      null !== listeners &&
-        "undefined" !== typeof listeners &&
-        0 < listeners.length &&
-        (traverseFragmentInstancesAndTextInstances(
-          this._fragmentFiber,
-          removeEventListenerFromChild,
-          type,
-          listener,
-          optionsOrUseCapture
-        ),
-        (type = indexOfEventListener(
+      if (null !== listeners) {
+        var index = indexOfEventListener(
           listeners,
           type,
           listener,
           optionsOrUseCapture
-        )),
-        null !== this._eventListeners && this._eventListeners.splice(type, 1));
+        );
+        -1 !== index &&
+          (traverseFragmentInstancesAndTextInstances(
+            this._fragmentFiber,
+            removeEventListenerFromChild,
+            type,
+            listener,
+            optionsOrUseCapture
+          ),
+          listeners.splice(index, 1));
+      }
     };
     FragmentInstance.prototype.dispatchEvent = function (event) {
       var parentHostFiber = getFragmentParentInstanceOrContainerFiber(
@@ -32313,11 +32313,11 @@ __DEV__ &&
     };
     (function () {
       var isomorphicReactPackageVersion = React.version;
-      if ("19.3.0-native-fb-bfb7a768-20260811" !== isomorphicReactPackageVersion)
+      if ("19.3.0-native-fb-3cba19c9-20260811" !== isomorphicReactPackageVersion)
         throw Error(
           'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' +
             (isomorphicReactPackageVersion +
-              "\n  - react-dom:  19.3.0-native-fb-bfb7a768-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
+              "\n  - react-dom:  19.3.0-native-fb-3cba19c9-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
         );
     })();
     ("function" === typeof Map &&
@@ -32354,10 +32354,10 @@ __DEV__ &&
       !(function () {
         var internals = {
           bundleType: 1,
-          version: "19.3.0-native-fb-bfb7a768-20260811",
+          version: "19.3.0-native-fb-3cba19c9-20260811",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.3.0-native-fb-bfb7a768-20260811"
+          reconcilerVersion: "19.3.0-native-fb-3cba19c9-20260811"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -32507,5 +32507,5 @@ __DEV__ &&
       listenToAllSupportedEvents(container);
       return new ReactDOMHydrationRoot(initialChildren);
     };
-    exports.version = "19.3.0-native-fb-bfb7a768-20260811";
+    exports.version = "19.3.0-native-fb-3cba19c9-20260811";
   })();

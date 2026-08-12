@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<bd12850c40961affdda79177a869b307>>
+ * @generated SignedSource<<7acc5a9dec2722d2781e711fc68d14d7>>
  */
 
 /*
@@ -14595,20 +14595,20 @@ function debounceScrollEnd(targetInst, nativeEvent, nativeEventTarget) {
     (nativeEventTarget[internalScrollTimer] = targetInst));
 }
 for (
-  var i$jscomp$inline_1717 = 0;
-  i$jscomp$inline_1717 < simpleEventPluginEvents.length;
-  i$jscomp$inline_1717++
+  var i$jscomp$inline_1716 = 0;
+  i$jscomp$inline_1716 < simpleEventPluginEvents.length;
+  i$jscomp$inline_1716++
 ) {
-  var eventName$jscomp$inline_1718 =
-      simpleEventPluginEvents[i$jscomp$inline_1717],
-    domEventName$jscomp$inline_1719 =
-      eventName$jscomp$inline_1718.toLowerCase(),
-    capitalizedEvent$jscomp$inline_1720 =
-      eventName$jscomp$inline_1718[0].toUpperCase() +
-      eventName$jscomp$inline_1718.slice(1);
+  var eventName$jscomp$inline_1717 =
+      simpleEventPluginEvents[i$jscomp$inline_1716],
+    domEventName$jscomp$inline_1718 =
+      eventName$jscomp$inline_1717.toLowerCase(),
+    capitalizedEvent$jscomp$inline_1719 =
+      eventName$jscomp$inline_1717[0].toUpperCase() +
+      eventName$jscomp$inline_1717.slice(1);
   registerSimpleEvent(
-    domEventName$jscomp$inline_1719,
-    "on" + capitalizedEvent$jscomp$inline_1720
+    domEventName$jscomp$inline_1718,
+    "on" + capitalizedEvent$jscomp$inline_1719
   );
 }
 registerSimpleEvent(ANIMATION_END, "onAnimationEnd");
@@ -17011,24 +17011,24 @@ FragmentInstance.prototype.removeEventListener = function (
   optionsOrUseCapture
 ) {
   var listeners = this._eventListeners;
-  null !== listeners &&
-    "undefined" !== typeof listeners &&
-    0 < listeners.length &&
-    (traverseVisibleInstancesAndTextInstances(
-      this._fragmentFiber.child,
-      !1,
-      removeEventListenerFromChild,
-      type,
-      listener,
-      optionsOrUseCapture
-    ),
-    (type = indexOfEventListener(
+  if (null !== listeners) {
+    var index = indexOfEventListener(
       listeners,
       type,
       listener,
       optionsOrUseCapture
-    )),
-    null !== this._eventListeners && this._eventListeners.splice(type, 1));
+    );
+    -1 !== index &&
+      (traverseVisibleInstancesAndTextInstances(
+        this._fragmentFiber.child,
+        !1,
+        removeEventListenerFromChild,
+        type,
+        listener,
+        optionsOrUseCapture
+      ),
+      listeners.splice(index, 1));
+  }
 };
 function removeEventListenerFromChild(
   child,
@@ -18090,29 +18090,29 @@ function getResource(type, currentProps, pendingProps, currentResource) {
         "string" === typeof pendingProps.precedence
       ) {
         type = getStyleKey(pendingProps.href);
-        var styles$286 = getResourcesFromRoot(
+        var styles$285 = getResourcesFromRoot(
             JSCompiler_inline_result
           ).hoistableStyles,
-          resource$287 = styles$286.get(type);
-        resource$287 ||
+          resource$286 = styles$285.get(type);
+        resource$286 ||
           ((JSCompiler_inline_result =
             JSCompiler_inline_result.ownerDocument || JSCompiler_inline_result),
-          (resource$287 = {
+          (resource$286 = {
             type: "stylesheet",
             instance: null,
             count: 0,
             state: { loading: 0, preload: null }
           }),
-          styles$286.set(type, resource$287),
-          (styles$286 = JSCompiler_inline_result.querySelector(
+          styles$285.set(type, resource$286),
+          (styles$285 = JSCompiler_inline_result.querySelector(
             getStylesheetSelectorFromKey(type)
           ))
-            ? styles$286._p ||
-              ((resource$287.instance = styles$286),
-              (resource$287.state.loading = 5))
-            : ((styles$286 = preloadPropsMap.get(type)),
-              styles$286 ||
-                ((styles$286 = {
+            ? styles$285._p ||
+              ((resource$286.instance = styles$285),
+              (resource$286.state.loading = 5))
+            : ((styles$285 = preloadPropsMap.get(type)),
+              styles$285 ||
+                ((styles$285 = {
                   rel: "preload",
                   as: "style",
                   href: pendingProps.href,
@@ -18122,16 +18122,16 @@ function getResource(type, currentProps, pendingProps, currentResource) {
                   hrefLang: pendingProps.hrefLang,
                   referrerPolicy: pendingProps.referrerPolicy
                 }),
-                preloadPropsMap.set(type, styles$286)),
+                preloadPropsMap.set(type, styles$285)),
               preloadStylesheet(
                 JSCompiler_inline_result,
                 type,
-                styles$286,
-                resource$287.state
+                styles$285,
+                resource$286.state
               )));
         if (currentProps && null === currentResource)
           throw Error(formatProdErrorMessage(528, ""));
-        return resource$287;
+        return resource$286;
       }
       if (currentProps && null !== currentResource)
         throw Error(formatProdErrorMessage(529, ""));
@@ -18238,37 +18238,37 @@ function acquireResource(hoistableRoot, resource, props) {
         return (resource.instance = instance);
       case "stylesheet":
         styleProps = getStyleKey(props.href);
-        var instance$292 = hoistableRoot.querySelector(
+        var instance$291 = hoistableRoot.querySelector(
           getStylesheetSelectorFromKey(styleProps)
         );
-        if (instance$292)
+        if (instance$291)
           return (
             (resource.state.loading |= 4),
-            (resource.instance = instance$292),
-            markNodeAsHoistable(instance$292),
-            instance$292
+            (resource.instance = instance$291),
+            markNodeAsHoistable(instance$291),
+            instance$291
           );
         instance = stylesheetPropsFromRawProps(props);
         (styleProps = preloadPropsMap.get(styleProps)) &&
           adoptPreloadPropsForStylesheet(instance, styleProps);
-        instance$292 = (
+        instance$291 = (
           hoistableRoot.ownerDocument || hoistableRoot
         ).createElement("link");
-        markNodeAsHoistable(instance$292);
-        var linkInstance = instance$292;
+        markNodeAsHoistable(instance$291);
+        var linkInstance = instance$291;
         linkInstance._p = new Promise(function (resolve, reject) {
           linkInstance.onload = resolve;
           linkInstance.onerror = reject;
         });
-        setInitialProperties(instance$292, "link", instance);
+        setInitialProperties(instance$291, "link", instance);
         resource.state.loading |= 4;
-        insertStylesheet(instance$292, props.precedence, hoistableRoot);
-        return (resource.instance = instance$292);
+        insertStylesheet(instance$291, props.precedence, hoistableRoot);
+        return (resource.instance = instance$291);
       case "script":
-        instance$292 = getScriptKey(props.src);
+        instance$291 = getScriptKey(props.src);
         if (
           (styleProps = hoistableRoot.querySelector(
-            getScriptSelectorFromKey(instance$292)
+            getScriptSelectorFromKey(instance$291)
           ))
         )
           return (
@@ -18277,7 +18277,7 @@ function acquireResource(hoistableRoot, resource, props) {
             styleProps
           );
         instance = props;
-        if ((styleProps = preloadPropsMap.get(instance$292)))
+        if ((styleProps = preloadPropsMap.get(instance$291)))
           (instance = assign({}, props)),
             adoptPreloadPropsForScript(instance, styleProps);
         hoistableRoot = hoistableRoot.ownerDocument || hoistableRoot;
@@ -19431,16 +19431,16 @@ ReactDOMHydrationRoot.prototype.unstable_scheduleHydration = function (target) {
     0 === i && attemptExplicitHydrationTarget(target);
   }
 };
-var isomorphicReactPackageVersion$jscomp$inline_2144 = React.version;
+var isomorphicReactPackageVersion$jscomp$inline_2143 = React.version;
 if (
-  "19.3.0-native-fb-bfb7a768-20260811" !==
-  isomorphicReactPackageVersion$jscomp$inline_2144
+  "19.3.0-native-fb-3cba19c9-20260811" !==
+  isomorphicReactPackageVersion$jscomp$inline_2143
 )
   throw Error(
     formatProdErrorMessage(
       527,
-      isomorphicReactPackageVersion$jscomp$inline_2144,
-      "19.3.0-native-fb-bfb7a768-20260811"
+      isomorphicReactPackageVersion$jscomp$inline_2143,
+      "19.3.0-native-fb-3cba19c9-20260811"
     )
   );
 ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
@@ -19460,24 +19460,24 @@ ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
     null === componentOrElement ? null : componentOrElement.stateNode;
   return componentOrElement;
 };
-var internals$jscomp$inline_2721 = {
+var internals$jscomp$inline_2720 = {
   bundleType: 0,
-  version: "19.3.0-native-fb-bfb7a768-20260811",
+  version: "19.3.0-native-fb-3cba19c9-20260811",
   rendererPackageName: "react-dom",
   currentDispatcherRef: ReactSharedInternals,
-  reconcilerVersion: "19.3.0-native-fb-bfb7a768-20260811"
+  reconcilerVersion: "19.3.0-native-fb-3cba19c9-20260811"
 };
 if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
-  var hook$jscomp$inline_2722 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
+  var hook$jscomp$inline_2721 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
   if (
-    !hook$jscomp$inline_2722.isDisabled &&
-    hook$jscomp$inline_2722.supportsFiber
+    !hook$jscomp$inline_2721.isDisabled &&
+    hook$jscomp$inline_2721.supportsFiber
   )
     try {
-      (rendererID = hook$jscomp$inline_2722.inject(
-        internals$jscomp$inline_2721
+      (rendererID = hook$jscomp$inline_2721.inject(
+        internals$jscomp$inline_2720
       )),
-        (injectedHook = hook$jscomp$inline_2722);
+        (injectedHook = hook$jscomp$inline_2721);
     } catch (err) {}
 }
 exports.createRoot = function (container, options) {
@@ -19572,4 +19572,4 @@ exports.hydrateRoot = function (container, initialChildren, options) {
   listenToAllSupportedEvents(container);
   return new ReactDOMHydrationRoot(initialChildren);
 };
-exports.version = "19.3.0-native-fb-bfb7a768-20260811";
+exports.version = "19.3.0-native-fb-3cba19c9-20260811";
