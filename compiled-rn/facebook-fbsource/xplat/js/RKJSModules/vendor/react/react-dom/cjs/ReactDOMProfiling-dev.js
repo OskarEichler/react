@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<b0a4d78d74b75bafec9dfc25babee548>>
+ * @generated SignedSource<<6feff5998011055af29633ea6456ee61>>
  */
 
 /*
@@ -31717,18 +31717,16 @@ __DEV__ &&
       var parentHostFiber = getFragmentParentInstanceOrContainerFiber(
         this._fragmentFiber
       );
-      if (null !== parentHostFiber) {
-        parentHostFiber = getInstanceFromHostFiber(parentHostFiber);
-        var activeElement =
-          getOwnerDocumentFromRootContainer(parentHostFiber).activeElement;
-        null !== activeElement &&
-          parentHostFiber.contains(activeElement) &&
+      null !== parentHostFiber &&
+        ((parentHostFiber = getInstanceFromHostFiber(parentHostFiber)),
+        (parentHostFiber =
+          getOwnerDocumentFromRootContainer(parentHostFiber).activeElement),
+        null !== parentHostFiber &&
           traverseFragmentInstancesAndTextInstances(
             this._fragmentFiber,
             blurActiveElementWithinFragment,
-            activeElement
-          );
-      }
+            parentHostFiber
+          ));
     };
     FragmentInstance.prototype.observeUsing = function (observer) {
       if (enableFragmentRefsTextNodes) {
@@ -32375,11 +32373,11 @@ __DEV__ &&
     };
     (function () {
       var isomorphicReactPackageVersion = React.version;
-      if ("19.3.0-native-fb-3cba19c9-20260811" !== isomorphicReactPackageVersion)
+      if ("19.3.0-native-fb-278d318d-20260811" !== isomorphicReactPackageVersion)
         throw Error(
           'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' +
             (isomorphicReactPackageVersion +
-              "\n  - react-dom:  19.3.0-native-fb-3cba19c9-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
+              "\n  - react-dom:  19.3.0-native-fb-278d318d-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
         );
     })();
     ("function" === typeof Map &&
@@ -32416,10 +32414,10 @@ __DEV__ &&
       !(function () {
         var internals = {
           bundleType: 1,
-          version: "19.3.0-native-fb-3cba19c9-20260811",
+          version: "19.3.0-native-fb-278d318d-20260811",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.3.0-native-fb-3cba19c9-20260811"
+          reconcilerVersion: "19.3.0-native-fb-278d318d-20260811"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -32897,7 +32895,7 @@ __DEV__ &&
     exports.useFormStatus = function () {
       return resolveDispatcher().useHostTransitionStatus();
     };
-    exports.version = "19.3.0-native-fb-3cba19c9-20260811";
+    exports.version = "19.3.0-native-fb-278d318d-20260811";
     "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
       "function" ===
         typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&
