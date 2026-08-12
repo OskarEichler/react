@@ -18382,21 +18382,19 @@ FragmentInstance.prototype.blur = function () {
   var parentHostFiber = getFragmentParentInstanceOrContainerFiber(
     this._fragmentFiber
   );
-  if (null !== parentHostFiber) {
-    parentHostFiber = getInstanceFromHostFiber(parentHostFiber);
-    var activeElement =
-      getOwnerDocumentFromRootContainer(parentHostFiber).activeElement;
-    null !== activeElement &&
-      parentHostFiber.contains(activeElement) &&
+  null !== parentHostFiber &&
+    ((parentHostFiber = getInstanceFromHostFiber(parentHostFiber)),
+    (parentHostFiber =
+      getOwnerDocumentFromRootContainer(parentHostFiber).activeElement),
+    null !== parentHostFiber &&
       traverseVisibleInstancesAndTextInstances(
         this._fragmentFiber.child,
         !1,
         blurActiveElementWithinFragment,
-        activeElement,
+        parentHostFiber,
         void 0,
         void 0
-      );
-  }
+      ));
 };
 function blurActiveElementWithinFragment(child, activeElement) {
   if (enableFragmentRefsTextNodes && 6 === child.tag) return !1;
@@ -20676,14 +20674,14 @@ function getCrossOriginStringAs(as, input) {
 }
 var isomorphicReactPackageVersion$jscomp$inline_2088 = React.version;
 if (
-  "19.3.0-www-modern-3cba19c9-20260811" !==
+  "19.3.0-www-modern-278d318d-20260811" !==
   isomorphicReactPackageVersion$jscomp$inline_2088
 )
   throw Error(
     formatProdErrorMessage(
       527,
       isomorphicReactPackageVersion$jscomp$inline_2088,
-      "19.3.0-www-modern-3cba19c9-20260811"
+      "19.3.0-www-modern-278d318d-20260811"
     )
   );
 Internals.findDOMNode = function (componentOrElement) {
@@ -20701,10 +20699,10 @@ Internals.Events = [
 ];
 var internals$jscomp$inline_2632 = {
   bundleType: 0,
-  version: "19.3.0-www-modern-3cba19c9-20260811",
+  version: "19.3.0-www-modern-278d318d-20260811",
   rendererPackageName: "react-dom",
   currentDispatcherRef: ReactSharedInternals,
-  reconcilerVersion: "19.3.0-www-modern-3cba19c9-20260811"
+  reconcilerVersion: "19.3.0-www-modern-278d318d-20260811"
 };
 if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
   var hook$jscomp$inline_2633 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
@@ -21296,4 +21294,4 @@ exports.useFormState = function (action, initialState, permalink) {
 exports.useFormStatus = function () {
   return ReactSharedInternals.H.useHostTransitionStatus();
 };
-exports.version = "19.3.0-www-modern-3cba19c9-20260811";
+exports.version = "19.3.0-www-modern-278d318d-20260811";
