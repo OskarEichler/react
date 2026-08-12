@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<9ace782f547f06025e948eaae9050a77>>
+ * @generated SignedSource<<8d8a59eb980fc8f55f3482e27a9ac186>>
  */
 
 /*
@@ -291,6 +291,15 @@ __DEV__ &&
         fiber = fiber.return;
       }
       return null;
+    }
+    function fiberIsPortaledIntoHost(fiber) {
+      var foundPortalParent = !1;
+      for (fiber = fiber.return; null !== fiber; ) {
+        4 === fiber.tag && (foundPortalParent = !0);
+        if (3 === fiber.tag || 5 === fiber.tag || 27 === fiber.tag) break;
+        fiber = fiber.return;
+      }
+      return foundPortalParent;
     }
     function getFragmentInstanceOrTextInstanceSiblings(fiber) {
       var result = [null, null],
@@ -25917,7 +25926,9 @@ __DEV__ &&
         if (null === otherFiber)
           return (
             (otherFiber = otherNode.ownerDocument),
-            otherNode === otherFiber || otherNode === otherFiber.body
+            otherNode === otherFiber ||
+              otherNode === otherFiber.documentElement ||
+              otherNode === otherFiber.body
           );
         a: {
           otherFiber = fragmentFiber;
@@ -31805,70 +31816,82 @@ __DEV__ &&
       );
       var parentHostInstance = getInstanceFromHostFiber(parentHostFiber);
       if (0 === children.length) {
+        parentHostFiber = parentHostInstance;
+        if (fiberIsPortaledIntoHost(this._fragmentFiber)) {
+          a: {
+            for (children = this._fragmentFiber.return; null !== children; ) {
+              if (4 === children.tag) {
+                children = children.stateNode.containerInfo;
+                break a;
+              }
+              if (
+                3 === children.tag ||
+                5 === children.tag ||
+                27 === children.tag
+              )
+                break;
+              children = children.return;
+            }
+            children = null;
+          }
+          null != children && (parentHostFiber = children);
+        }
         children = this._fragmentFiber;
-        var parentResult =
-          parentHostInstance.compareDocumentPosition(otherNode);
-        parentHostFiber = parentResult;
-        parentHostInstance === otherNode
-          ? (parentHostFiber = Node.DOCUMENT_POSITION_CONTAINS)
-          : parentResult & Node.DOCUMENT_POSITION_CONTAINED_BY &&
+        var result = (parentHostInstance =
+          parentHostFiber.compareDocumentPosition(otherNode));
+        parentHostFiber === otherNode
+          ? (result = Node.DOCUMENT_POSITION_CONTAINS)
+          : parentHostInstance & Node.DOCUMENT_POSITION_CONTAINED_BY &&
             ((children =
               getFragmentInstanceOrTextInstanceSiblings(children)[1]),
             null === children
-              ? (parentHostFiber = Node.DOCUMENT_POSITION_PRECEDING)
+              ? (result = Node.DOCUMENT_POSITION_PRECEDING)
               : ((otherNode =
                   getInstanceFromHostFiber(children).compareDocumentPosition(
                     otherNode
                   )),
-                (parentHostFiber =
+                (result =
                   0 === otherNode ||
                   otherNode & Node.DOCUMENT_POSITION_FOLLOWING
                     ? Node.DOCUMENT_POSITION_FOLLOWING
                     : Node.DOCUMENT_POSITION_PRECEDING)));
-        return (parentHostFiber |=
-          Node.DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC);
+        return (result |= Node.DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC);
       }
       parentHostFiber = getInstanceFromHostFiber(children[0]);
-      parentResult = getInstanceFromHostFiber(children[children.length - 1]);
-      for (
-        var foundPortalParent = !1, parent = this._fragmentFiber.return;
-        null !== parent;
-
-      ) {
-        4 === parent.tag && (foundPortalParent = !0);
-        if (3 === parent.tag || 5 === parent.tag || 27 === parent.tag) break;
-        parent = parent.return;
-      }
-      foundPortalParent = foundPortalParent
+      result = getInstanceFromHostFiber(children[children.length - 1]);
+      var parentHostInstanceFromDOM = fiberIsPortaledIntoHost(
+        this._fragmentFiber
+      )
         ? parentHostFiber.parentElement
         : parentHostInstance;
-      if (null == foundPortalParent) return Node.DOCUMENT_POSITION_DISCONNECTED;
+      if (null == parentHostInstanceFromDOM)
+        return Node.DOCUMENT_POSITION_DISCONNECTED;
       parentHostInstance =
-        foundPortalParent.compareDocumentPosition(parentHostFiber) &
+        parentHostInstanceFromDOM.compareDocumentPosition(parentHostFiber) &
         Node.DOCUMENT_POSITION_CONTAINED_BY;
-      foundPortalParent =
-        foundPortalParent.compareDocumentPosition(parentResult) &
+      parentHostInstanceFromDOM =
+        parentHostInstanceFromDOM.compareDocumentPosition(result) &
         Node.DOCUMENT_POSITION_CONTAINED_BY;
-      parent = parentHostFiber.compareDocumentPosition(otherNode);
-      var lastResult = parentResult.compareDocumentPosition(otherNode),
+      var firstResult = parentHostFiber.compareDocumentPosition(otherNode),
+        lastResult = result.compareDocumentPosition(otherNode),
         otherNodeIsWithinFirstOrLastChild =
-          parent & Node.DOCUMENT_POSITION_CONTAINED_BY ||
+          firstResult & Node.DOCUMENT_POSITION_CONTAINED_BY ||
           lastResult & Node.DOCUMENT_POSITION_CONTAINED_BY;
       lastResult =
         parentHostInstance &&
-        foundPortalParent &&
-        parent & Node.DOCUMENT_POSITION_FOLLOWING &&
+        parentHostInstanceFromDOM &&
+        firstResult & Node.DOCUMENT_POSITION_FOLLOWING &&
         lastResult & Node.DOCUMENT_POSITION_PRECEDING;
       parentHostFiber =
         (parentHostInstance && parentHostFiber === otherNode) ||
-        (foundPortalParent && parentResult === otherNode) ||
+        (parentHostInstanceFromDOM && result === otherNode) ||
         otherNodeIsWithinFirstOrLastChild ||
         lastResult
           ? Node.DOCUMENT_POSITION_CONTAINED_BY
           : (!parentHostInstance && parentHostFiber === otherNode) ||
-              (!foundPortalParent && parentResult === otherNode)
+              (!parentHostInstanceFromDOM && result === otherNode)
             ? Node.DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC
-            : parent;
+            : firstResult;
       return parentHostFiber & Node.DOCUMENT_POSITION_DISCONNECTED ||
         parentHostFiber & Node.DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC ||
         validateDocumentPositionWithFiberTree(
@@ -32370,11 +32393,11 @@ __DEV__ &&
     };
     (function () {
       var isomorphicReactPackageVersion = React.version;
-      if ("19.3.0-native-fb-db4ee659-20260811" !== isomorphicReactPackageVersion)
+      if ("19.3.0-native-fb-809280d5-20260811" !== isomorphicReactPackageVersion)
         throw Error(
           'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' +
             (isomorphicReactPackageVersion +
-              "\n  - react-dom:  19.3.0-native-fb-db4ee659-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
+              "\n  - react-dom:  19.3.0-native-fb-809280d5-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
         );
     })();
     ("function" === typeof Map &&
@@ -32411,10 +32434,10 @@ __DEV__ &&
       !(function () {
         var internals = {
           bundleType: 1,
-          version: "19.3.0-native-fb-db4ee659-20260811",
+          version: "19.3.0-native-fb-809280d5-20260811",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.3.0-native-fb-db4ee659-20260811"
+          reconcilerVersion: "19.3.0-native-fb-809280d5-20260811"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -32892,7 +32915,7 @@ __DEV__ &&
     exports.useFormStatus = function () {
       return resolveDispatcher().useHostTransitionStatus();
     };
-    exports.version = "19.3.0-native-fb-db4ee659-20260811";
+    exports.version = "19.3.0-native-fb-809280d5-20260811";
     "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
       "function" ===
         typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&
