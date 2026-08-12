@@ -8073,7 +8073,7 @@ module.exports = function ($$$config) {
     for (var parent = fiber.return; null !== parent; ) {
       isFragmentInstanceParent(parent) &&
         deleteChildFromFragmentInstance(fiber.stateNode, parent.stateNode);
-      if (isFragmentInstanceHostParent(parent)) break;
+      if (isFragmentInstanceHostBoundary(parent)) break;
       parent = parent.return;
     }
   }
@@ -8088,16 +8088,15 @@ module.exports = function ($$$config) {
       4 === fiber.tag
     );
   }
-  function isFragmentInstanceParent(fiber) {
-    return fiber && 7 === fiber.tag && null !== fiber.stateNode;
-  }
-  function isFragmentInstanceHostParent(fiber) {
+  function isFragmentInstanceHostBoundary(fiber) {
     return (
       5 === fiber.tag ||
-      (supportsSingletons ? 27 === fiber.tag : !1) ||
       3 === fiber.tag ||
-      4 === fiber.tag
+      (supportsSingletons ? 27 === fiber.tag : !1)
     );
+  }
+  function isFragmentInstanceParent(fiber) {
+    return fiber && 7 === fiber.tag && null !== fiber.stateNode;
   }
   function getHostSibling(fiber) {
     a: for (;;) {
@@ -10108,13 +10107,13 @@ module.exports = function ($$$config) {
               ? (parentFragmentInstances = [fragmentInstance])
               : parentFragmentInstances.push(fragmentInstance);
           }
+          void 0 === hostParentFiber &&
+            isHostParent(parentFiber) &&
+            (hostParentFiber = parentFiber);
           collectFragmentInstances &&
-            isFragmentInstanceHostParent(parentFiber) &&
+            isFragmentInstanceHostBoundary(parentFiber) &&
             (collectFragmentInstances = !1);
-          if (isHostParent(parentFiber)) {
-            hostParentFiber = parentFiber;
-            break;
-          }
+          if (void 0 !== hostParentFiber && !collectFragmentInstances) break;
           parentFiber = parentFiber.return;
         }
         if (supportsMutation) {
@@ -10455,7 +10454,7 @@ module.exports = function ($$$config) {
                   instance.stateNode,
                   parent.stateNode
                 );
-              if (isFragmentInstanceHostParent(parent)) break;
+              if (isFragmentInstanceHostBoundary(parent)) break;
               parent = parent.return;
             }
           }
@@ -14751,7 +14750,7 @@ module.exports = function ($$$config) {
       version: rendererVersion,
       rendererPackageName: rendererPackageName,
       currentDispatcherRef: ReactSharedInternals,
-      reconcilerVersion: "19.3.0-www-classic-305feb90-20260811"
+      reconcilerVersion: "19.3.0-www-classic-fdaa617c-20260811"
     };
     null !== extraDevToolsConfig &&
       (internals.rendererConfig = extraDevToolsConfig);

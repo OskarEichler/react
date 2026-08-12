@@ -14568,7 +14568,7 @@ __DEV__ &&
             null != childInstance.reactFragments &&
             childInstance.reactFragments.delete(fragmentInstance);
         }
-        if (isFragmentInstanceHostParent(parent)) break;
+        if (isFragmentInstanceHostBoundary(parent)) break;
         parent = parent.return;
       }
     }
@@ -14581,16 +14581,11 @@ __DEV__ &&
         4 === fiber.tag
       );
     }
+    function isFragmentInstanceHostBoundary(fiber) {
+      return 5 === fiber.tag || 3 === fiber.tag || 27 === fiber.tag;
+    }
     function isFragmentInstanceParent(fiber) {
       return fiber && 7 === fiber.tag && null !== fiber.stateNode;
-    }
-    function isFragmentInstanceHostParent(fiber) {
-      return (
-        5 === fiber.tag ||
-        27 === fiber.tag ||
-        3 === fiber.tag ||
-        4 === fiber.tag
-      );
     }
     function getHostSibling(fiber) {
       a: for (;;) {
@@ -14738,13 +14733,13 @@ __DEV__ &&
             ? (parentFragmentInstances = [fragmentInstance])
             : parentFragmentInstances.push(fragmentInstance);
         }
+        void 0 === hostParentFiber &&
+          isHostParent(parentFiber) &&
+          (hostParentFiber = parentFiber);
         collectFragmentInstances &&
-          isFragmentInstanceHostParent(parentFiber) &&
+          isFragmentInstanceHostBoundary(parentFiber) &&
           (collectFragmentInstances = !1);
-        if (isHostParent(parentFiber)) {
-          hostParentFiber = parentFiber;
-          break;
-        }
+        if (void 0 !== hostParentFiber && !collectFragmentInstances) break;
         parentFiber = parentFiber.return;
       }
       if (null == hostParentFiber)
@@ -17526,7 +17521,7 @@ __DEV__ &&
                   finishedWork.stateNode,
                   parent.stateNode
                 );
-              if (isFragmentInstanceHostParent(parent)) break a;
+              if (isFragmentInstanceHostBoundary(parent)) break a;
               parent = parent.return;
             }
           recursivelyTraverseReappearLayoutEffects(
@@ -33637,11 +33632,11 @@ __DEV__ &&
       return_targetInst = null;
     (function () {
       var isomorphicReactPackageVersion = React.version;
-      if ("19.3.0-www-classic-305feb90-20260811" !== isomorphicReactPackageVersion)
+      if ("19.3.0-www-classic-fdaa617c-20260811" !== isomorphicReactPackageVersion)
         throw Error(
           'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' +
             (isomorphicReactPackageVersion +
-              "\n  - react-dom:  19.3.0-www-classic-305feb90-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
+              "\n  - react-dom:  19.3.0-www-classic-fdaa617c-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
         );
     })();
     ("function" === typeof Map &&
@@ -33684,10 +33679,10 @@ __DEV__ &&
       !(function () {
         var internals = {
           bundleType: 1,
-          version: "19.3.0-www-classic-305feb90-20260811",
+          version: "19.3.0-www-classic-fdaa617c-20260811",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.3.0-www-classic-305feb90-20260811"
+          reconcilerVersion: "19.3.0-www-classic-fdaa617c-20260811"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -34312,7 +34307,7 @@ __DEV__ &&
     exports.useFormStatus = function () {
       return resolveDispatcher().useHostTransitionStatus();
     };
-    exports.version = "19.3.0-www-classic-305feb90-20260811";
+    exports.version = "19.3.0-www-classic-fdaa617c-20260811";
     "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
       "function" ===
         typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&
