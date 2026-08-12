@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<385d84e42fc7d9986b84498342488ef7>>
+ * @generated SignedSource<<7e22bd6785097d06411b9c195d914708>>
  */
 
 "use strict";
@@ -9161,15 +9161,6 @@ function pushMutationContext() {
   viewTransitionMutationContext = !1;
   return prev;
 }
-function commitHostMount(finishedWork) {
-  try {
-    throw Error(
-      "The current renderer does not support mutation. This error is likely caused by a bug in React. Please file an issue."
-    );
-  } catch (error) {
-    captureCommitPhaseError(finishedWork, finishedWork.return, error);
-  }
-}
 function commitFragmentInstanceDeletionEffects(fiber) {
   for (var parent = fiber.return; null !== parent; ) {
     if (isFragmentInstanceParent(parent)) {
@@ -9190,6 +9181,15 @@ function isFragmentInstanceHostBoundary(fiber) {
 }
 function isFragmentInstanceParent(fiber) {
   return fiber && 7 === fiber.tag && null !== fiber.stateNode;
+}
+function commitHostMount(finishedWork) {
+  try {
+    throw Error(
+      "The current renderer does not support mutation. This error is likely caused by a bug in React. Please file an issue."
+    );
+  } catch (error) {
+    captureCommitPhaseError(finishedWork, finishedWork.return, error);
+  }
 }
 function commitImmutablePlacementNodeToFragmentInstances(
   finishedWork,
@@ -10505,35 +10505,27 @@ function commitReconciliationEffects(finishedWork) {
   var flags = finishedWork.flags;
   if (flags & 2) {
     try {
-      for (
-        var hostParentFiber,
-          parentFragmentInstances = null,
-          collectFragmentInstances = enableFragmentRefs,
-          parentFiber = finishedWork.return;
-        null !== parentFiber;
+      if (enableFragmentRefs) {
+        for (
+          var parentFragmentInstances = null, parent = finishedWork.return;
+          null !== parent;
 
-      ) {
-        if (collectFragmentInstances && isFragmentInstanceParent(parentFiber)) {
-          var fragmentInstance = parentFiber.stateNode;
-          null === parentFragmentInstances
-            ? (parentFragmentInstances = [fragmentInstance])
-            : parentFragmentInstances.push(fragmentInstance);
+        ) {
+          if (isFragmentInstanceParent(parent)) {
+            var fragmentInstance = parent.stateNode;
+            null === parentFragmentInstances
+              ? (parentFragmentInstances = [fragmentInstance])
+              : parentFragmentInstances.push(fragmentInstance);
+          }
+          if (isFragmentInstanceHostBoundary(parent)) break;
+          parent = parent.return;
         }
-        void 0 !== hostParentFiber ||
-          (5 !== parentFiber.tag &&
-            3 !== parentFiber.tag &&
-            4 !== parentFiber.tag) ||
-          (hostParentFiber = parentFiber);
-        collectFragmentInstances &&
-          isFragmentInstanceHostBoundary(parentFiber) &&
-          (collectFragmentInstances = !1);
-        if (void 0 !== hostParentFiber && !collectFragmentInstances) break;
-        parentFiber = parentFiber.return;
-      }
+        var JSCompiler_temp = parentFragmentInstances;
+      } else JSCompiler_temp = null;
       enableFragmentRefs &&
         commitImmutablePlacementNodeToFragmentInstances(
           finishedWork,
-          parentFragmentInstances
+          JSCompiler_temp
         );
     } catch (error) {
       captureCommitPhaseError(finishedWork, finishedWork.return, error);
@@ -14499,10 +14491,10 @@ batchedUpdatesImpl = function (fn, a) {
 var roots = new Map(),
   internals$jscomp$inline_1675 = {
     bundleType: 0,
-    version: "19.3.0-native-fb-fdaa617c-20260811",
+    version: "19.3.0-native-fb-22e4f993-20260811",
     rendererPackageName: "react-native-renderer",
     currentDispatcherRef: ReactSharedInternals,
-    reconcilerVersion: "19.3.0-native-fb-fdaa617c-20260811"
+    reconcilerVersion: "19.3.0-native-fb-22e4f993-20260811"
   };
 null !== extraDevToolsConfig &&
   (internals$jscomp$inline_1675.rendererConfig = extraDevToolsConfig);
@@ -14522,16 +14514,16 @@ internals$jscomp$inline_1675.injectProfilingHooks = function (profilingHooks) {
   injectedProfilingHooks = profilingHooks;
 };
 if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
-  var hook$jscomp$inline_2054 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
+  var hook$jscomp$inline_2050 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
   if (
-    !hook$jscomp$inline_2054.isDisabled &&
-    hook$jscomp$inline_2054.supportsFiber
+    !hook$jscomp$inline_2050.isDisabled &&
+    hook$jscomp$inline_2050.supportsFiber
   )
     try {
-      (rendererID = hook$jscomp$inline_2054.inject(
+      (rendererID = hook$jscomp$inline_2050.inject(
         internals$jscomp$inline_1675
       )),
-        (injectedHook = hook$jscomp$inline_2054);
+        (injectedHook = hook$jscomp$inline_2050);
     } catch (err) {}
 }
 exports.createPortal = function (children, containerTag) {

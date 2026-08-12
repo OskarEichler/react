@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<9047a72a30a0b88b143e308ed41f518f>>
+ * @generated SignedSource<<b5bccebd3351ae16cbe16631197e1fb4>>
  */
 
 /*
@@ -14675,38 +14675,6 @@ __DEV__ &&
           commitStartTime
         );
     }
-    function commitHostMount(finishedWork) {
-      var type = finishedWork.type,
-        props = finishedWork.memoizedProps,
-        instance = finishedWork.stateNode;
-      try {
-        runWithFiberInDEV(
-          finishedWork,
-          commitMount,
-          instance,
-          type,
-          props,
-          finishedWork
-        );
-      } catch (error) {
-        captureCommitPhaseError(finishedWork, finishedWork.return, error);
-      }
-    }
-    function commitHostUpdate(finishedWork, newProps, oldProps) {
-      try {
-        runWithFiberInDEV(
-          finishedWork,
-          commitUpdate,
-          finishedWork.stateNode,
-          finishedWork.type,
-          oldProps,
-          newProps,
-          finishedWork
-        );
-      } catch (error) {
-        captureCommitPhaseError(finishedWork, finishedWork.return, error);
-      }
-    }
     function commitNewChildToFragmentInstances(fiber, parentFragmentInstances) {
       if (
         (5 === fiber.tag ||
@@ -14745,6 +14713,44 @@ __DEV__ &&
         parent = parent.return;
       }
     }
+    function isFragmentInstanceHostBoundary(fiber) {
+      return 5 === fiber.tag || 3 === fiber.tag || 27 === fiber.tag;
+    }
+    function isFragmentInstanceParent(fiber) {
+      return fiber && 7 === fiber.tag && null !== fiber.stateNode;
+    }
+    function commitHostMount(finishedWork) {
+      var type = finishedWork.type,
+        props = finishedWork.memoizedProps,
+        instance = finishedWork.stateNode;
+      try {
+        runWithFiberInDEV(
+          finishedWork,
+          commitMount,
+          instance,
+          type,
+          props,
+          finishedWork
+        );
+      } catch (error) {
+        captureCommitPhaseError(finishedWork, finishedWork.return, error);
+      }
+    }
+    function commitHostUpdate(finishedWork, newProps, oldProps) {
+      try {
+        runWithFiberInDEV(
+          finishedWork,
+          commitUpdate,
+          finishedWork.stateNode,
+          finishedWork.type,
+          oldProps,
+          newProps,
+          finishedWork
+        );
+      } catch (error) {
+        captureCommitPhaseError(finishedWork, finishedWork.return, error);
+      }
+    }
     function isHostParent(fiber) {
       return (
         5 === fiber.tag ||
@@ -14753,12 +14759,6 @@ __DEV__ &&
         (27 === fiber.tag && isSingletonScope(fiber.type)) ||
         4 === fiber.tag
       );
-    }
-    function isFragmentInstanceHostBoundary(fiber) {
-      return 5 === fiber.tag || 3 === fiber.tag || 27 === fiber.tag;
-    }
-    function isFragmentInstanceParent(fiber) {
-      return fiber && 7 === fiber.tag && null !== fiber.stateNode;
     }
     function getHostSibling(fiber) {
       a: for (;;) {
@@ -14898,28 +14898,29 @@ __DEV__ &&
     }
     function commitPlacement(finishedWork) {
       for (
-        var hostParentFiber,
-          parentFragmentInstances = null,
-          collectFragmentInstances = enableFragmentRefs,
-          parentFiber = finishedWork.return;
+        var hostParentFiber, parentFiber = finishedWork.return;
         null !== parentFiber;
 
       ) {
-        if (collectFragmentInstances && isFragmentInstanceParent(parentFiber)) {
-          var fragmentInstance = parentFiber.stateNode;
-          null === parentFragmentInstances
-            ? (parentFragmentInstances = [fragmentInstance])
-            : parentFragmentInstances.push(fragmentInstance);
+        if (isHostParent(parentFiber)) {
+          hostParentFiber = parentFiber;
+          break;
         }
-        void 0 === hostParentFiber &&
-          isHostParent(parentFiber) &&
-          (hostParentFiber = parentFiber);
-        collectFragmentInstances &&
-          isFragmentInstanceHostBoundary(parentFiber) &&
-          (collectFragmentInstances = !1);
-        if (void 0 !== hostParentFiber && !collectFragmentInstances) break;
         parentFiber = parentFiber.return;
       }
+      if (enableFragmentRefs) {
+        parentFiber = null;
+        for (var parent = finishedWork.return; null !== parent; ) {
+          if (isFragmentInstanceParent(parent)) {
+            var fragmentInstance = parent.stateNode;
+            null === parentFiber
+              ? (parentFiber = [fragmentInstance])
+              : parentFiber.push(fragmentInstance);
+          }
+          if (isFragmentInstanceHostBoundary(parent)) break;
+          parent = parent.return;
+        }
+      } else parentFiber = null;
       if (null == hostParentFiber)
         throw Error(
           "Expected to find a host parent. This error is likely caused by a bug in React. Please file an issue."
@@ -14927,36 +14928,35 @@ __DEV__ &&
       switch (hostParentFiber.tag) {
         case 27:
           hostParentFiber = hostParentFiber.stateNode;
-          collectFragmentInstances = getHostSibling(finishedWork);
+          parent = getHostSibling(finishedWork);
           insertOrAppendPlacementNode(
             finishedWork,
-            collectFragmentInstances,
+            parent,
             hostParentFiber,
-            parentFragmentInstances
+            parentFiber
           );
           break;
         case 5:
-          collectFragmentInstances = hostParentFiber.stateNode;
+          parent = hostParentFiber.stateNode;
           hostParentFiber.flags & 32 &&
-            (resetTextContent(collectFragmentInstances),
-            (hostParentFiber.flags &= -33));
+            (resetTextContent(parent), (hostParentFiber.flags &= -33));
           hostParentFiber = getHostSibling(finishedWork);
           insertOrAppendPlacementNode(
             finishedWork,
             hostParentFiber,
-            collectFragmentInstances,
-            parentFragmentInstances
+            parent,
+            parentFiber
           );
           break;
         case 3:
         case 4:
           hostParentFiber = hostParentFiber.stateNode.containerInfo;
-          collectFragmentInstances = getHostSibling(finishedWork);
+          parent = getHostSibling(finishedWork);
           insertOrAppendPlacementNodeIntoContainer(
             finishedWork,
-            collectFragmentInstances,
+            parent,
             hostParentFiber,
-            parentFragmentInstances
+            parentFiber
           );
           break;
         default:
@@ -32327,11 +32327,11 @@ __DEV__ &&
     };
     (function () {
       var isomorphicReactPackageVersion = React.version;
-      if ("19.3.0-native-fb-fdaa617c-20260811" !== isomorphicReactPackageVersion)
+      if ("19.3.0-native-fb-22e4f993-20260811" !== isomorphicReactPackageVersion)
         throw Error(
           'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' +
             (isomorphicReactPackageVersion +
-              "\n  - react-dom:  19.3.0-native-fb-fdaa617c-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
+              "\n  - react-dom:  19.3.0-native-fb-22e4f993-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
         );
     })();
     ("function" === typeof Map &&
@@ -32368,10 +32368,10 @@ __DEV__ &&
       !(function () {
         var internals = {
           bundleType: 1,
-          version: "19.3.0-native-fb-fdaa617c-20260811",
+          version: "19.3.0-native-fb-22e4f993-20260811",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.3.0-native-fb-fdaa617c-20260811"
+          reconcilerVersion: "19.3.0-native-fb-22e4f993-20260811"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -32521,5 +32521,5 @@ __DEV__ &&
       listenToAllSupportedEvents(container);
       return new ReactDOMHydrationRoot(initialChildren);
     };
-    exports.version = "19.3.0-native-fb-fdaa617c-20260811";
+    exports.version = "19.3.0-native-fb-22e4f993-20260811";
   })();

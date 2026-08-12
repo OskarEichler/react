@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<7c0da05420abdd1a207ab8bfd5885e3d>>
+ * @generated SignedSource<<b22212dd893be35cccec9c89013d4b93>>
  */
 
 "use strict";
@@ -11827,23 +11827,6 @@ __DEV__ &&
       viewTransitionMutationContext = !1;
       return prev;
     }
-    function commitHostMount(finishedWork) {
-      var type = finishedWork.type,
-        props = finishedWork.memoizedProps,
-        instance = finishedWork.stateNode;
-      try {
-        runWithFiberInDEV(
-          finishedWork,
-          commitMount,
-          instance,
-          type,
-          props,
-          finishedWork
-        );
-      } catch (error) {
-        captureCommitPhaseError(finishedWork, finishedWork.return, error);
-      }
-    }
     function commitFragmentInstanceDeletionEffects(fiber) {
       for (var parent = fiber.return; null !== parent; ) {
         if (isFragmentInstanceParent(parent)) {
@@ -11865,36 +11848,41 @@ __DEV__ &&
     function isFragmentInstanceParent(fiber) {
       return fiber && 7 === fiber.tag && null !== fiber.stateNode;
     }
-    function commitPlacement(finishedWork) {
-      for (
-        var hostParentFiber,
-          parentFragmentInstances = null,
-          collectFragmentInstances = enableFragmentRefs,
-          parentFiber = finishedWork.return;
-        null !== parentFiber;
-
-      ) {
-        if (collectFragmentInstances && isFragmentInstanceParent(parentFiber)) {
-          var fragmentInstance = parentFiber.stateNode;
-          null === parentFragmentInstances
-            ? (parentFragmentInstances = [fragmentInstance])
-            : parentFragmentInstances.push(fragmentInstance);
-        }
-        void 0 !== hostParentFiber ||
-          (5 !== parentFiber.tag &&
-            3 !== parentFiber.tag &&
-            4 !== parentFiber.tag) ||
-          (hostParentFiber = parentFiber);
-        collectFragmentInstances &&
-          isFragmentInstanceHostBoundary(parentFiber) &&
-          (collectFragmentInstances = !1);
-        if (void 0 !== hostParentFiber && !collectFragmentInstances) break;
-        parentFiber = parentFiber.return;
+    function commitHostMount(finishedWork) {
+      var type = finishedWork.type,
+        props = finishedWork.memoizedProps,
+        instance = finishedWork.stateNode;
+      try {
+        runWithFiberInDEV(
+          finishedWork,
+          commitMount,
+          instance,
+          type,
+          props,
+          finishedWork
+        );
+      } catch (error) {
+        captureCommitPhaseError(finishedWork, finishedWork.return, error);
       }
+    }
+    function commitPlacement(finishedWork) {
+      if (enableFragmentRefs) {
+        var JSCompiler_temp = null;
+        for (var parent = finishedWork.return; null !== parent; ) {
+          if (isFragmentInstanceParent(parent)) {
+            var fragmentInstance = parent.stateNode;
+            null === JSCompiler_temp
+              ? (JSCompiler_temp = [fragmentInstance])
+              : JSCompiler_temp.push(fragmentInstance);
+          }
+          if (isFragmentInstanceHostBoundary(parent)) break;
+          parent = parent.return;
+        }
+      } else JSCompiler_temp = null;
       enableFragmentRefs &&
         commitImmutablePlacementNodeToFragmentInstances(
           finishedWork,
-          parentFragmentInstances
+          JSCompiler_temp
         );
     }
     function commitImmutablePlacementNodeToFragmentInstances(
@@ -21404,10 +21392,10 @@ __DEV__ &&
     (function () {
       var internals = {
         bundleType: 1,
-        version: "19.3.0-native-fb-fdaa617c-20260811",
+        version: "19.3.0-native-fb-22e4f993-20260811",
         rendererPackageName: "react-native-renderer",
         currentDispatcherRef: ReactSharedInternals,
-        reconcilerVersion: "19.3.0-native-fb-fdaa617c-20260811"
+        reconcilerVersion: "19.3.0-native-fb-22e4f993-20260811"
       };
       null !== extraDevToolsConfig &&
         (internals.rendererConfig = extraDevToolsConfig);
