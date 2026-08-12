@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<f2830038d01a1fff3def9294b6811e22>>
+ * @generated SignedSource<<33f53e1c477b9c0b7b4f2701b7fdc629>>
  */
 
 /*
@@ -9673,22 +9673,21 @@ function commitFragmentInstanceDeletionEffects(fiber) {
   for (var parent = fiber.return; null !== parent; ) {
     if (isFragmentInstanceParent(parent)) {
       var fragmentInstance = parent.stateNode;
-      var childInstance = fiber.stateNode;
-      if (3 !== childInstance.nodeType) {
-        var eventListeners = fragmentInstance._eventListeners;
-        if (null !== eventListeners)
-          for (var i = 0; i < eventListeners.length; i++) {
-            var _eventListeners$i4 = eventListeners[i];
-            childInstance.removeEventListener(
-              _eventListeners$i4.type,
-              _eventListeners$i4.listener,
-              _eventListeners$i4.optionsOrUseCapture
-            );
-          }
+      var childInstance = fiber.stateNode,
+        eventListeners = fragmentInstance._eventListeners;
+      if (null !== eventListeners)
+        for (var i = 0; i < eventListeners.length; i++) {
+          var _eventListeners$i4 = eventListeners[i];
+          childInstance.removeEventListener(
+            _eventListeners$i4.type,
+            _eventListeners$i4.listener,
+            _eventListeners$i4.optionsOrUseCapture
+          );
+        }
+      3 !== childInstance.nodeType &&
         enableFragmentRefsInstanceHandles &&
-          null != childInstance.reactFragments &&
-          childInstance.reactFragments.delete(fragmentInstance);
-      }
+        null != childInstance.reactFragments &&
+        childInstance.reactFragments.delete(fragmentInstance);
     }
     if (isFragmentInstanceHostParent(parent)) break;
     parent = parent.return;
@@ -17536,24 +17535,23 @@ function addFragmentHandleToInstance(instance, fragmentInstance) {
     instance.reactFragments.add(fragmentInstance));
 }
 function commitNewChildToFragmentInstance(childInstance, fragmentInstance) {
-  if (3 !== childInstance.nodeType) {
-    var eventListeners = fragmentInstance._eventListeners;
-    if (null !== eventListeners)
-      for (var i = 0; i < eventListeners.length; i++) {
-        var _eventListeners$i3 = eventListeners[i];
-        childInstance.addEventListener(
-          _eventListeners$i3.type,
-          _eventListeners$i3.listener,
-          _eventListeners$i3.optionsOrUseCapture
-        );
-      }
-    null !== fragmentInstance._observers &&
+  var eventListeners = fragmentInstance._eventListeners;
+  if (null !== eventListeners)
+    for (var i = 0; i < eventListeners.length; i++) {
+      var _eventListeners$i3 = eventListeners[i];
+      childInstance.addEventListener(
+        _eventListeners$i3.type,
+        _eventListeners$i3.listener,
+        _eventListeners$i3.optionsOrUseCapture
+      );
+    }
+  3 !== childInstance.nodeType &&
+    (null !== fragmentInstance._observers &&
       fragmentInstance._observers.forEach(function (observer) {
         observer.observe(childInstance);
-      });
+      }),
     enableFragmentRefsInstanceHandles &&
-      addFragmentHandleToInstance(childInstance, fragmentInstance);
-  }
+      addFragmentHandleToInstance(childInstance, fragmentInstance));
 }
 function clearContainerSparingly(container) {
   var nextNode = container.firstChild;
@@ -19472,14 +19470,14 @@ ReactDOMHydrationRoot.prototype.unstable_scheduleHydration = function (target) {
 };
 var isomorphicReactPackageVersion$jscomp$inline_2135 = React.version;
 if (
-  "19.3.0-native-fb-809280d5-20260811" !==
+  "19.3.0-native-fb-18c30e7a-20260811" !==
   isomorphicReactPackageVersion$jscomp$inline_2135
 )
   throw Error(
     formatProdErrorMessage(
       527,
       isomorphicReactPackageVersion$jscomp$inline_2135,
-      "19.3.0-native-fb-809280d5-20260811"
+      "19.3.0-native-fb-18c30e7a-20260811"
     )
   );
 ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
@@ -19501,10 +19499,10 @@ ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
 };
 var internals$jscomp$inline_2710 = {
   bundleType: 0,
-  version: "19.3.0-native-fb-809280d5-20260811",
+  version: "19.3.0-native-fb-18c30e7a-20260811",
   rendererPackageName: "react-dom",
   currentDispatcherRef: ReactSharedInternals,
-  reconcilerVersion: "19.3.0-native-fb-809280d5-20260811"
+  reconcilerVersion: "19.3.0-native-fb-18c30e7a-20260811"
 };
 if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
   var hook$jscomp$inline_2711 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
@@ -19776,4 +19774,4 @@ exports.useFormState = function (action, initialState, permalink) {
 exports.useFormStatus = function () {
   return ReactSharedInternals.H.useHostTransitionStatus();
 };
-exports.version = "19.3.0-native-fb-809280d5-20260811";
+exports.version = "19.3.0-native-fb-18c30e7a-20260811";

@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<42c7fc711ef0a021ea5f946ad6d5099d>>
+ * @generated SignedSource<<d61de8de2579143fd61b40f1abd183a7>>
  */
 
 /*
@@ -10453,22 +10453,21 @@ function commitFragmentInstanceDeletionEffects(fiber) {
   for (var parent = fiber.return; null !== parent; ) {
     if (isFragmentInstanceParent(parent)) {
       var fragmentInstance = parent.stateNode;
-      var childInstance = fiber.stateNode;
-      if (3 !== childInstance.nodeType) {
-        var eventListeners = fragmentInstance._eventListeners;
-        if (null !== eventListeners)
-          for (var i = 0; i < eventListeners.length; i++) {
-            var _eventListeners$i4 = eventListeners[i];
-            childInstance.removeEventListener(
-              _eventListeners$i4.type,
-              _eventListeners$i4.listener,
-              _eventListeners$i4.optionsOrUseCapture
-            );
-          }
+      var childInstance = fiber.stateNode,
+        eventListeners = fragmentInstance._eventListeners;
+      if (null !== eventListeners)
+        for (var i = 0; i < eventListeners.length; i++) {
+          var _eventListeners$i4 = eventListeners[i];
+          childInstance.removeEventListener(
+            _eventListeners$i4.type,
+            _eventListeners$i4.listener,
+            _eventListeners$i4.optionsOrUseCapture
+          );
+        }
+      3 !== childInstance.nodeType &&
         enableFragmentRefsInstanceHandles &&
-          null != childInstance.reactFragments &&
-          childInstance.reactFragments.delete(fragmentInstance);
-      }
+        null != childInstance.reactFragments &&
+        childInstance.reactFragments.delete(fragmentInstance);
     }
     if (isFragmentInstanceHostParent(parent)) break;
     parent = parent.return;
@@ -19584,24 +19583,23 @@ function addFragmentHandleToInstance(instance, fragmentInstance) {
     instance.reactFragments.add(fragmentInstance));
 }
 function commitNewChildToFragmentInstance(childInstance, fragmentInstance) {
-  if (3 !== childInstance.nodeType) {
-    var eventListeners = fragmentInstance._eventListeners;
-    if (null !== eventListeners)
-      for (var i = 0; i < eventListeners.length; i++) {
-        var _eventListeners$i3 = eventListeners[i];
-        childInstance.addEventListener(
-          _eventListeners$i3.type,
-          _eventListeners$i3.listener,
-          _eventListeners$i3.optionsOrUseCapture
-        );
-      }
-    null !== fragmentInstance._observers &&
+  var eventListeners = fragmentInstance._eventListeners;
+  if (null !== eventListeners)
+    for (var i = 0; i < eventListeners.length; i++) {
+      var _eventListeners$i3 = eventListeners[i];
+      childInstance.addEventListener(
+        _eventListeners$i3.type,
+        _eventListeners$i3.listener,
+        _eventListeners$i3.optionsOrUseCapture
+      );
+    }
+  3 !== childInstance.nodeType &&
+    (null !== fragmentInstance._observers &&
       fragmentInstance._observers.forEach(function (observer) {
         observer.observe(childInstance);
-      });
+      }),
     enableFragmentRefsInstanceHandles &&
-      addFragmentHandleToInstance(childInstance, fragmentInstance);
-  }
+      addFragmentHandleToInstance(childInstance, fragmentInstance));
 }
 function clearContainerSparingly(container) {
   var nextNode = container.firstChild;
@@ -21513,14 +21511,14 @@ ReactDOMHydrationRoot.prototype.unstable_scheduleHydration = function (target) {
 };
 var isomorphicReactPackageVersion$jscomp$inline_2481 = React.version;
 if (
-  "19.3.0-native-fb-809280d5-20260811" !==
+  "19.3.0-native-fb-18c30e7a-20260811" !==
   isomorphicReactPackageVersion$jscomp$inline_2481
 )
   throw Error(
     formatProdErrorMessage(
       527,
       isomorphicReactPackageVersion$jscomp$inline_2481,
-      "19.3.0-native-fb-809280d5-20260811"
+      "19.3.0-native-fb-18c30e7a-20260811"
     )
   );
 ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
@@ -21542,10 +21540,10 @@ ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
 };
 var internals$jscomp$inline_2488 = {
   bundleType: 0,
-  version: "19.3.0-native-fb-809280d5-20260811",
+  version: "19.3.0-native-fb-18c30e7a-20260811",
   rendererPackageName: "react-dom",
   currentDispatcherRef: ReactSharedInternals,
-  reconcilerVersion: "19.3.0-native-fb-809280d5-20260811",
+  reconcilerVersion: "19.3.0-native-fb-18c30e7a-20260811",
   getLaneLabelMap: function () {
     for (
       var map = new Map(), lane = 1, index$351 = 0;
@@ -21668,4 +21666,4 @@ exports.hydrateRoot = function (container, initialChildren, options) {
   listenToAllSupportedEvents(container);
   return new ReactDOMHydrationRoot(initialChildren);
 };
-exports.version = "19.3.0-native-fb-809280d5-20260811";
+exports.version = "19.3.0-native-fb-18c30e7a-20260811";

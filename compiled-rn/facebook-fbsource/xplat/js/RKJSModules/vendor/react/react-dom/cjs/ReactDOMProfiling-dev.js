@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<8d8a59eb980fc8f55f3482e27a9ac186>>
+ * @generated SignedSource<<f5daaea812691581f1b1f6e63e1da654>>
  */
 
 /*
@@ -14733,22 +14733,21 @@ __DEV__ &&
       for (var parent = fiber.return; null !== parent; ) {
         if (isFragmentInstanceParent(parent)) {
           var childInstance = fiber.stateNode,
-            fragmentInstance = parent.stateNode;
-          if (3 !== childInstance.nodeType) {
-            var eventListeners = fragmentInstance._eventListeners;
-            if (null !== eventListeners)
-              for (var i = 0; i < eventListeners.length; i++) {
-                var _eventListeners$i3 = eventListeners[i];
-                childInstance.removeEventListener(
-                  _eventListeners$i3.type,
-                  _eventListeners$i3.listener,
-                  _eventListeners$i3.optionsOrUseCapture
-                );
-              }
+            fragmentInstance = parent.stateNode,
+            eventListeners = fragmentInstance._eventListeners;
+          if (null !== eventListeners)
+            for (var i = 0; i < eventListeners.length; i++) {
+              var _eventListeners$i3 = eventListeners[i];
+              childInstance.removeEventListener(
+                _eventListeners$i3.type,
+                _eventListeners$i3.listener,
+                _eventListeners$i3.optionsOrUseCapture
+              );
+            }
+          3 !== childInstance.nodeType &&
             enableFragmentRefsInstanceHandles &&
-              null != childInstance.reactFragments &&
-              childInstance.reactFragments.delete(fragmentInstance);
-          }
+            null != childInstance.reactFragments &&
+            childInstance.reactFragments.delete(fragmentInstance);
         }
         if (isFragmentInstanceHostParent(parent)) break;
         parent = parent.return;
@@ -26024,24 +26023,23 @@ __DEV__ &&
         instance.reactFragments.add(fragmentInstance));
     }
     function commitNewChildToFragmentInstance(childInstance, fragmentInstance) {
-      if (3 !== childInstance.nodeType) {
-        var eventListeners = fragmentInstance._eventListeners;
-        if (null !== eventListeners)
-          for (var i = 0; i < eventListeners.length; i++) {
-            var _eventListeners$i2 = eventListeners[i];
-            childInstance.addEventListener(
-              _eventListeners$i2.type,
-              _eventListeners$i2.listener,
-              _eventListeners$i2.optionsOrUseCapture
-            );
-          }
-        null !== fragmentInstance._observers &&
+      var eventListeners = fragmentInstance._eventListeners;
+      if (null !== eventListeners)
+        for (var i = 0; i < eventListeners.length; i++) {
+          var _eventListeners$i2 = eventListeners[i];
+          childInstance.addEventListener(
+            _eventListeners$i2.type,
+            _eventListeners$i2.listener,
+            _eventListeners$i2.optionsOrUseCapture
+          );
+        }
+      3 !== childInstance.nodeType &&
+        (null !== fragmentInstance._observers &&
           fragmentInstance._observers.forEach(function (observer) {
             observer.observe(childInstance);
-          });
+          }),
         enableFragmentRefsInstanceHandles &&
-          addFragmentHandleToInstance(childInstance, fragmentInstance);
-      }
+          addFragmentHandleToInstance(childInstance, fragmentInstance));
     }
     function clearContainerSparingly(container) {
       var nextNode = container.firstChild;
@@ -32393,11 +32391,11 @@ __DEV__ &&
     };
     (function () {
       var isomorphicReactPackageVersion = React.version;
-      if ("19.3.0-native-fb-809280d5-20260811" !== isomorphicReactPackageVersion)
+      if ("19.3.0-native-fb-18c30e7a-20260811" !== isomorphicReactPackageVersion)
         throw Error(
           'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' +
             (isomorphicReactPackageVersion +
-              "\n  - react-dom:  19.3.0-native-fb-809280d5-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
+              "\n  - react-dom:  19.3.0-native-fb-18c30e7a-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
         );
     })();
     ("function" === typeof Map &&
@@ -32434,10 +32432,10 @@ __DEV__ &&
       !(function () {
         var internals = {
           bundleType: 1,
-          version: "19.3.0-native-fb-809280d5-20260811",
+          version: "19.3.0-native-fb-18c30e7a-20260811",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.3.0-native-fb-809280d5-20260811"
+          reconcilerVersion: "19.3.0-native-fb-18c30e7a-20260811"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -32915,7 +32913,7 @@ __DEV__ &&
     exports.useFormStatus = function () {
       return resolveDispatcher().useHostTransitionStatus();
     };
-    exports.version = "19.3.0-native-fb-809280d5-20260811";
+    exports.version = "19.3.0-native-fb-18c30e7a-20260811";
     "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
       "function" ===
         typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&
