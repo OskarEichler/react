@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<39d98277e27ef1fe4d8c7084ba7cd18d>>
+ * @generated SignedSource<<7c0da05420abdd1a207ab8bfd5885e3d>>
  */
 
 "use strict";
@@ -11855,19 +11855,20 @@ __DEV__ &&
               null != childInstance.reactFragments &&
               childInstance.reactFragments.delete(fragmentInstance));
         }
-        if (isFragmentInstanceHostParent(parent)) break;
+        if (isFragmentInstanceHostBoundary(parent)) break;
         parent = parent.return;
       }
+    }
+    function isFragmentInstanceHostBoundary(fiber) {
+      return 5 === fiber.tag || 3 === fiber.tag || !1;
     }
     function isFragmentInstanceParent(fiber) {
       return fiber && 7 === fiber.tag && null !== fiber.stateNode;
     }
-    function isFragmentInstanceHostParent(fiber) {
-      return 5 === fiber.tag || 3 === fiber.tag || 4 === fiber.tag;
-    }
     function commitPlacement(finishedWork) {
       for (
-        var parentFragmentInstances = null,
+        var hostParentFiber,
+          parentFragmentInstances = null,
           collectFragmentInstances = enableFragmentRefs,
           parentFiber = finishedWork.return;
         null !== parentFiber;
@@ -11879,15 +11880,15 @@ __DEV__ &&
             ? (parentFragmentInstances = [fragmentInstance])
             : parentFragmentInstances.push(fragmentInstance);
         }
+        void 0 !== hostParentFiber ||
+          (5 !== parentFiber.tag &&
+            3 !== parentFiber.tag &&
+            4 !== parentFiber.tag) ||
+          (hostParentFiber = parentFiber);
         collectFragmentInstances &&
-          isFragmentInstanceHostParent(parentFiber) &&
+          isFragmentInstanceHostBoundary(parentFiber) &&
           (collectFragmentInstances = !1);
-        if (
-          5 === parentFiber.tag ||
-          3 === parentFiber.tag ||
-          4 === parentFiber.tag
-        )
-          break;
+        if (void 0 !== hostParentFiber && !collectFragmentInstances) break;
         parentFiber = parentFiber.return;
       }
       enableFragmentRefs &&
@@ -13608,7 +13609,7 @@ __DEV__ &&
                   finishedWork.stateNode,
                   parent.stateNode
                 );
-              if (isFragmentInstanceHostParent(parent)) break a;
+              if (isFragmentInstanceHostBoundary(parent)) break a;
               parent = parent.return;
             }
           recursivelyTraverseReappearLayoutEffects(
@@ -21403,10 +21404,10 @@ __DEV__ &&
     (function () {
       var internals = {
         bundleType: 1,
-        version: "19.3.0-native-fb-305feb90-20260811",
+        version: "19.3.0-native-fb-fdaa617c-20260811",
         rendererPackageName: "react-native-renderer",
         currentDispatcherRef: ReactSharedInternals,
-        reconcilerVersion: "19.3.0-native-fb-305feb90-20260811"
+        reconcilerVersion: "19.3.0-native-fb-fdaa617c-20260811"
       };
       null !== extraDevToolsConfig &&
         (internals.rendererConfig = extraDevToolsConfig);

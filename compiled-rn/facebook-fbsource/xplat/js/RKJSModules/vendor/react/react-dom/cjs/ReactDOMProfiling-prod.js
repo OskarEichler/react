@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<3c51de633af88969d4f3a2239a01940d>>
+ * @generated SignedSource<<2074ad3861dddff6c6daad5591934dcc>>
  */
 
 /*
@@ -9689,7 +9689,7 @@ function commitFragmentInstanceDeletionEffects(fiber) {
         null != childInstance.reactFragments &&
         childInstance.reactFragments.delete(fragmentInstance);
     }
-    if (isFragmentInstanceHostParent(parent)) break;
+    if (isFragmentInstanceHostBoundary(parent)) break;
     parent = parent.return;
   }
 }
@@ -9702,13 +9702,11 @@ function isHostParent(fiber) {
     4 === fiber.tag
   );
 }
+function isFragmentInstanceHostBoundary(fiber) {
+  return 5 === fiber.tag || 3 === fiber.tag || 27 === fiber.tag;
+}
 function isFragmentInstanceParent(fiber) {
   return fiber && 7 === fiber.tag && null !== fiber.stateNode;
-}
-function isFragmentInstanceHostParent(fiber) {
-  return (
-    5 === fiber.tag || 27 === fiber.tag || 3 === fiber.tag || 4 === fiber.tag
-  );
 }
 function getHostSibling(fiber) {
   a: for (;;) {
@@ -11671,13 +11669,13 @@ function commitReconciliationEffects(finishedWork) {
             ? (parentFragmentInstances = [fragmentInstance])
             : parentFragmentInstances.push(fragmentInstance);
         }
+        void 0 === hostParentFiber &&
+          isHostParent(parentFiber) &&
+          (hostParentFiber = parentFiber);
         collectFragmentInstances &&
-          isFragmentInstanceHostParent(parentFiber) &&
+          isFragmentInstanceHostBoundary(parentFiber) &&
           (collectFragmentInstances = !1);
-        if (isHostParent(parentFiber)) {
-          hostParentFiber = parentFiber;
-          break;
-        }
+        if (void 0 !== hostParentFiber && !collectFragmentInstances) break;
         parentFiber = parentFiber.return;
       }
       if (null == hostParentFiber) throw Error(formatProdErrorMessage(160));
@@ -12035,7 +12033,7 @@ function recursivelyTraverseReappearLayoutEffects(
                 instance.stateNode,
                 parent.stateNode
               );
-            if (isFragmentInstanceHostParent(parent)) break;
+            if (isFragmentInstanceHostBoundary(parent)) break;
             parent = parent.return;
           }
         }
@@ -19473,14 +19471,14 @@ ReactDOMHydrationRoot.prototype.unstable_scheduleHydration = function (target) {
 };
 var isomorphicReactPackageVersion$jscomp$inline_2135 = React.version;
 if (
-  "19.3.0-native-fb-305feb90-20260811" !==
+  "19.3.0-native-fb-fdaa617c-20260811" !==
   isomorphicReactPackageVersion$jscomp$inline_2135
 )
   throw Error(
     formatProdErrorMessage(
       527,
       isomorphicReactPackageVersion$jscomp$inline_2135,
-      "19.3.0-native-fb-305feb90-20260811"
+      "19.3.0-native-fb-fdaa617c-20260811"
     )
   );
 ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
@@ -19502,10 +19500,10 @@ ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
 };
 var internals$jscomp$inline_2710 = {
   bundleType: 0,
-  version: "19.3.0-native-fb-305feb90-20260811",
+  version: "19.3.0-native-fb-fdaa617c-20260811",
   rendererPackageName: "react-dom",
   currentDispatcherRef: ReactSharedInternals,
-  reconcilerVersion: "19.3.0-native-fb-305feb90-20260811"
+  reconcilerVersion: "19.3.0-native-fb-fdaa617c-20260811"
 };
 if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
   var hook$jscomp$inline_2711 = __REACT_DEVTOOLS_GLOBAL_HOOK__;
@@ -19777,4 +19775,4 @@ exports.useFormState = function (action, initialState, permalink) {
 exports.useFormStatus = function () {
   return ReactSharedInternals.H.useHostTransitionStatus();
 };
-exports.version = "19.3.0-native-fb-305feb90-20260811";
+exports.version = "19.3.0-native-fb-fdaa617c-20260811";

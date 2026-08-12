@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<cace53f79397a1a1d94d845bbd346ae1>>
+ * @generated SignedSource<<9047a72a30a0b88b143e308ed41f518f>>
  */
 
 /*
@@ -14741,7 +14741,7 @@ __DEV__ &&
             null != childInstance.reactFragments &&
             childInstance.reactFragments.delete(fragmentInstance);
         }
-        if (isFragmentInstanceHostParent(parent)) break;
+        if (isFragmentInstanceHostBoundary(parent)) break;
         parent = parent.return;
       }
     }
@@ -14754,16 +14754,11 @@ __DEV__ &&
         4 === fiber.tag
       );
     }
+    function isFragmentInstanceHostBoundary(fiber) {
+      return 5 === fiber.tag || 3 === fiber.tag || 27 === fiber.tag;
+    }
     function isFragmentInstanceParent(fiber) {
       return fiber && 7 === fiber.tag && null !== fiber.stateNode;
-    }
-    function isFragmentInstanceHostParent(fiber) {
-      return (
-        5 === fiber.tag ||
-        27 === fiber.tag ||
-        3 === fiber.tag ||
-        4 === fiber.tag
-      );
     }
     function getHostSibling(fiber) {
       a: for (;;) {
@@ -14916,13 +14911,13 @@ __DEV__ &&
             ? (parentFragmentInstances = [fragmentInstance])
             : parentFragmentInstances.push(fragmentInstance);
         }
+        void 0 === hostParentFiber &&
+          isHostParent(parentFiber) &&
+          (hostParentFiber = parentFiber);
         collectFragmentInstances &&
-          isFragmentInstanceHostParent(parentFiber) &&
+          isFragmentInstanceHostBoundary(parentFiber) &&
           (collectFragmentInstances = !1);
-        if (isHostParent(parentFiber)) {
-          hostParentFiber = parentFiber;
-          break;
-        }
+        if (void 0 !== hostParentFiber && !collectFragmentInstances) break;
         parentFiber = parentFiber.return;
       }
       if (null == hostParentFiber)
@@ -17459,7 +17454,7 @@ __DEV__ &&
                   finishedWork.stateNode,
                   parent.stateNode
                 );
-              if (isFragmentInstanceHostParent(parent)) break a;
+              if (isFragmentInstanceHostBoundary(parent)) break a;
               parent = parent.return;
             }
           recursivelyTraverseReappearLayoutEffects(
@@ -32332,11 +32327,11 @@ __DEV__ &&
     };
     (function () {
       var isomorphicReactPackageVersion = React.version;
-      if ("19.3.0-native-fb-305feb90-20260811" !== isomorphicReactPackageVersion)
+      if ("19.3.0-native-fb-fdaa617c-20260811" !== isomorphicReactPackageVersion)
         throw Error(
           'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' +
             (isomorphicReactPackageVersion +
-              "\n  - react-dom:  19.3.0-native-fb-305feb90-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
+              "\n  - react-dom:  19.3.0-native-fb-fdaa617c-20260811\nLearn more: https://react.dev/warnings/version-mismatch")
         );
     })();
     ("function" === typeof Map &&
@@ -32373,10 +32368,10 @@ __DEV__ &&
       !(function () {
         var internals = {
           bundleType: 1,
-          version: "19.3.0-native-fb-305feb90-20260811",
+          version: "19.3.0-native-fb-fdaa617c-20260811",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.3.0-native-fb-305feb90-20260811"
+          reconcilerVersion: "19.3.0-native-fb-fdaa617c-20260811"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -32526,5 +32521,5 @@ __DEV__ &&
       listenToAllSupportedEvents(container);
       return new ReactDOMHydrationRoot(initialChildren);
     };
-    exports.version = "19.3.0-native-fb-305feb90-20260811";
+    exports.version = "19.3.0-native-fb-fdaa617c-20260811";
   })();
