@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<8342a36c918674152b722ff3c1667956>>
+ * @generated SignedSource<<dbdcbb95c5e22ed1f9858c1399f95d52>>
  */
 
 "use strict";
@@ -13331,9 +13331,13 @@ __DEV__ &&
           break;
         case 7:
           enableFragmentRefs &&
+            (flags & 512 &&
+              (offscreenSubtreeWasHidden ||
+                null === current ||
+                safelyDetachRef(current, current.return)),
             current &&
-            null !== current.stateNode &&
-            (current.stateNode._fragmentFiber = finishedWork);
+              null !== current.stateNode &&
+              (current.stateNode._fragmentFiber = finishedWork));
         default:
           recursivelyTraverseMutationEffects(root, finishedWork, lanes),
             commitReconciliationEffects(finishedWork);
@@ -21409,10 +21413,10 @@ __DEV__ &&
     (function () {
       var internals = {
         bundleType: 1,
-        version: "19.3.0-native-fb-eb8feb71-20260814",
+        version: "19.3.0-native-fb-eafeac09-20260819",
         rendererPackageName: "react-native-renderer",
         currentDispatcherRef: ReactSharedInternals,
-        reconcilerVersion: "19.3.0-native-fb-eb8feb71-20260814"
+        reconcilerVersion: "19.3.0-native-fb-eafeac09-20260819"
       };
       null !== extraDevToolsConfig &&
         (internals.rendererConfig = extraDevToolsConfig);
