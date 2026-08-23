@@ -302,11 +302,21 @@ jobs:
         if: steps.node_modules.outputs.cache-hit != 'true'
       - run: yarn --cwd compiler install --frozen-lockfile
         if: steps.node_modules.outputs.cache-hit != 'true'
+      - name: Restore build shard weights
+        uses: actions/cache/restore@v4
+        with:
+          # Written by process_artifacts_combined on every push. The
+          # restore-keys prefix picks up the most recent entry. On a miss the
+          # build falls back to round-robin sharding.
+          path: build-weights.json
+          key: build-weights-v1-${{ github.run_id }}
+          restore-keys: build-weights-v1-
       - run: yarn build --index=${{ matrix.worker_id }} --total=25 --r=${{ matrix.release_channel }} --ci
         env:
           CI: github
           RELEASE_CHANNEL: ${{ matrix.release_channel }}
           NODE_INDEX: ${{ matrix.worker_id }}
+          BUILD_SHARD_WEIGHTS: build-weights.json
       - name: Lint build
         run: yarn lint-build
       - name: Display structure of build
@@ -471,6 +481,32 @@ jobs:
           pattern: _build_*
           path: build
           merge-multiple: true
+      # Only used to log weight variance; the new measurement is what gets
+      # saved, so removed bundles drop out instead of accumulating.
+      - name: Restore previous build shard weights
+        uses: actions/cache/restore@v4
+        with:
+          # Must match the save step's path exactly: the cache version is a
+          # hash of the path, so a different path never matches the key.
+          path: build-weights.json
+          key: build-weights-v1-${{ github.run_id }}
+          restore-keys: build-weights-v1-
+      - name: Update build shard weights
+        run: node scripts/ci/merge-build-weights.js
+      - name: Save build shard weights
+        # Pull request saves land in the pull request's own merge-ref cache
+        # scope, which only that pull request can read; fork pull requests
+        # have a read-only cache token, so their save degrades to a warning.
+        # A re-run of this same workflow run reuses the cache key, and cache
+        # entries are immutable. Weights are an optimization, so a failed
+        # save must not break artifact processing.
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: build-weights.json
+          key: build-weights-v1-${{ github.run_id }}
+      # Keep the shard timings out of the released tarball.
+      - run: rm -rf build/__shard_timings__
       - name: Display structure of build
         run: ls -R build
       - run: echo ${{ github.event.pull_request.head.sha || github.sha }} >> build/COMMIT_SHA
