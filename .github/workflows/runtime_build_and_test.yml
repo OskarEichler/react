@@ -281,13 +281,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-      - uses: actions/setup-java@v4
+      # Java is only needed by `yarn build` (Closure Compiler), so its setup
+      # runs in the background while Node and node_modules are set up.
+      - name: Set up Java
+        id: setup_java
+        uses: actions/setup-java@v4
+        background: true
         with:
           distribution: temurin
           java-version: 11.0.22
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
       - name: Restore cached node_modules
         uses: actions/cache/restore@v4
         id: node_modules
@@ -311,6 +316,9 @@ jobs:
           path: build-weights.json
           key: build-weights-v1-${{ github.run_id }}
           restore-keys: build-weights-v1-
+      # setup-java's exports (e.g. JAVA_HOME) only apply to steps after this wait.
+      - name: Wait for Java setup
+        wait: setup_java
       - run: yarn build --index=${{ matrix.worker_id }} --total=25 --r=${{ matrix.release_channel }} --ci
         env:
           CI: github
