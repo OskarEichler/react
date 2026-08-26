@@ -7,7 +7,7 @@
  * @noflow
  * @nolint
  * @preventMunge
- * @generated SignedSource<<bbae658365ea2abb5c856996c464e51e>>
+ * @generated SignedSource<<fd424528d7da12f0050906e806e15973>>
  */
 
 /*
@@ -19162,7 +19162,7 @@ function getAttachOptions(opts) {
 }
 function normalizeListenerOptions(opts) {
   return null == opts
-    ? "0"
+    ? "c=0"
     : "boolean" === typeof opts
       ? "c=" + (opts ? "1" : "0")
       : "c=" + (opts.capture ? "1" : "0");
@@ -21584,14 +21584,14 @@ ReactDOMHydrationRoot.prototype.unstable_scheduleHydration = function (target) {
 };
 var isomorphicReactPackageVersion$jscomp$inline_2473 = React.version;
 if (
-  "19.3.0-native-fb-eafeac09-20260819" !==
+  "19.3.0-native-fb-a1124489-20260826" !==
   isomorphicReactPackageVersion$jscomp$inline_2473
 )
   throw Error(
     formatProdErrorMessage(
       527,
       isomorphicReactPackageVersion$jscomp$inline_2473,
-      "19.3.0-native-fb-eafeac09-20260819"
+      "19.3.0-native-fb-a1124489-20260826"
     )
   );
 ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
@@ -21613,10 +21613,10 @@ ReactDOMSharedInternals.findDOMNode = function (componentOrElement) {
 };
 var internals$jscomp$inline_2480 = {
   bundleType: 0,
-  version: "19.3.0-native-fb-eafeac09-20260819",
+  version: "19.3.0-native-fb-a1124489-20260826",
   rendererPackageName: "react-dom",
   currentDispatcherRef: ReactSharedInternals,
-  reconcilerVersion: "19.3.0-native-fb-eafeac09-20260819",
+  reconcilerVersion: "19.3.0-native-fb-a1124489-20260826",
   getLaneLabelMap: function () {
     for (
       var map = new Map(), lane = 1, index$351 = 0;
@@ -21904,7 +21904,7 @@ exports.useFormState = function (action, initialState, permalink) {
 exports.useFormStatus = function () {
   return ReactSharedInternals.H.useHostTransitionStatus();
 };
-exports.version = "19.3.0-native-fb-eafeac09-20260819";
+exports.version = "19.3.0-native-fb-a1124489-20260826";
 "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
   "function" ===
     typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&
