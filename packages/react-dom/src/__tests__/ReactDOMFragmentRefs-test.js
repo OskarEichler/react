@@ -1766,6 +1766,7 @@ describe('FragmentRefs', () => {
           logs.push(entry.target.id);
         });
       });
+      const unobserve = jest.spyOn(observer, 'unobserve');
       function Test({showB}) {
         const fragmentRef = React.useRef(null);
         React.useEffect(() => {
@@ -1805,10 +1806,12 @@ describe('FragmentRefs', () => {
       await act(() => root.render(<Test showB={true} />));
       simulateAllChildrenIntersecting();
       expect(logs).toEqual(['childA', 'childB']);
+      const childB = container.querySelector('#childB');
 
       // Hide child and expect it to be unobserved
       logs = [];
       await act(() => root.render(<Test showB={false} />));
+      expect(unobserve).toHaveBeenCalledWith(childB);
       simulateAllChildrenIntersecting();
       expect(logs).toEqual(['childA']);
 
