@@ -228,6 +228,38 @@ describe('ReactChildReconciler', () => {
     expect(close).toHaveBeenCalled();
   });
 
+  it('preserves reconciliation errors when reading iterator return throws', async () => {
+    const returnGetter = jest.fn(() => {
+      throw new Error('failed to read return');
+    });
+    const iterable = {
+      [Symbol.iterator]() {
+        let didYield = false;
+        const iterator = {
+          next() {
+            if (didYield) {
+              return {done: true};
+            }
+            didYield = true;
+            return {done: false, value: {invalid: true}};
+          },
+        };
+        Object.defineProperty(iterator, 'return', {get: returnGetter});
+        return iterator;
+      },
+    };
+
+    const container = document.createElement('div');
+    const root = ReactDOMClient.createRoot(container);
+    await expect(
+      act(() => {
+        root.render(<div>{iterable}</div>);
+      }),
+    ).rejects.toThrow('Objects are not valid as a React child');
+
+    expect(returnGetter).toHaveBeenCalled();
+  });
+
   // @gate enableAsyncIterableChildren
   it('closes an async iterator when reconciling one of its children throws', async () => {
     const fulfilledThenable = value => ({

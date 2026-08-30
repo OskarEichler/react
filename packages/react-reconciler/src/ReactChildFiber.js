@@ -1514,13 +1514,13 @@ function createChildReconciler(
         lanes,
       );
     } catch (error) {
-      const iteratorReturn = (newChildren as any).return;
-      if (typeof iteratorReturn === 'function') {
-        try {
+      try {
+        const iteratorReturn = (newChildren as any).return;
+        if (typeof iteratorReturn === 'function') {
           iteratorReturn.call(newChildren);
-        } catch {
-          // Preserve the reconciliation error, matching IteratorClose semantics.
         }
+      } catch {
+        // Preserve the reconciliation error, matching IteratorClose semantics.
       }
       throw error;
     }
