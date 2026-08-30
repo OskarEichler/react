@@ -3034,6 +3034,10 @@ FragmentInstance.prototype.addEventListener = function (
   listener: EventListener,
   optionsOrUseCapture?: EventListenerOptionsOrUseCapture,
 ): void {
+  const signal = getListenerSignal(optionsOrUseCapture);
+  if (signal != null && signal.aborted) {
+    return;
+  }
   if (this._eventListeners === null) {
     this._eventListeners = [];
   }
@@ -3042,8 +3046,24 @@ FragmentInstance.prototype.addEventListener = function (
   // Element.addEventListener will only apply uniquely new event listeners by default. Since we
   // need to collect the listeners to apply to appended children, we track them ourselves and use
   // custom equality check for the options.
-  const isNewEventListener =
-    indexOfEventListener(listeners, type, listener, optionsOrUseCapture) === -1;
+  const existingIndex = indexOfEventListener(
+    listeners,
+    type,
+    listener,
+    optionsOrUseCapture,
+  );
+  let isNewEventListener = existingIndex === -1;
+  if (existingIndex !== -1) {
+    const existingSignal = getListenerSignal(
+      listeners[existingIndex].optionsOrUseCapture,
+    );
+    if (existingSignal != null && existingSignal.aborted) {
+      // The signal has already removed this listener from every host child.
+      // Discard the stale record so the listener can be added again.
+      listeners.splice(existingIndex, 1);
+      isNewEventListener = true;
+    }
+  }
   if (isNewEventListener) {
     const fragmentInstance = this;
     let attachedListener = listener;
@@ -3131,6 +3151,11 @@ function removeEventListenerFromChild(
   const instance = getInstanceFromHostFiber<Instance | TextInstance>(child);
   instance.removeEventListener(type, listener, optionsOrUseCapture);
   return false;
+}
+function getListenerSignal(
+  opts: ?EventListenerOptionsOrUseCapture,
+): void | AbortSignal {
+  return opts != null && typeof opts !== 'boolean' ? opts.signal : undefined;
 }
 function isOnceOption(opts: ?EventListenerOptionsOrUseCapture): boolean {
   return opts != null && typeof opts !== 'boolean' && opts.once === true;

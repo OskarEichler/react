@@ -874,6 +874,71 @@ describe('FragmentRefs', () => {
       });
 
       // @gate enableFragmentRefs
+      it('can re-add a listener after its signal aborts', async () => {
+        const fragmentRef = React.createRef();
+        const childRef = React.createRef();
+        const root = ReactDOMClient.createRoot(container);
+        const controller = new AbortController();
+        const logs = [];
+
+        function listener() {
+          logs.push('click');
+        }
+
+        await act(() => {
+          root.render(
+            <Fragment ref={fragmentRef}>
+              <div ref={childRef}>child</div>
+            </Fragment>,
+          );
+        });
+
+        fragmentRef.current.addEventListener('click', listener, {
+          signal: controller.signal,
+        });
+        childRef.current.click();
+        expect(logs).toEqual(['click']);
+
+        controller.abort();
+        childRef.current.click();
+        expect(logs).toEqual(['click']);
+
+        fragmentRef.current.addEventListener('click', listener);
+        childRef.current.click();
+        expect(logs).toEqual(['click', 'click']);
+      });
+
+      // @gate enableFragmentRefs
+      it('does not track a listener with an already aborted signal', async () => {
+        const fragmentRef = React.createRef();
+        const childRef = React.createRef();
+        const root = ReactDOMClient.createRoot(container);
+        const controller = new AbortController();
+        const logs = [];
+
+        function listener() {
+          logs.push('click');
+        }
+
+        await act(() => {
+          root.render(
+            <Fragment ref={fragmentRef}>
+              <div ref={childRef}>child</div>
+            </Fragment>,
+          );
+        });
+
+        controller.abort();
+        fragmentRef.current.addEventListener('click', listener, {
+          signal: controller.signal,
+        });
+        fragmentRef.current.addEventListener('click', listener);
+
+        childRef.current.click();
+        expect(logs).toEqual(['click']);
+      });
+
+      // @gate enableFragmentRefs
       it('adds and removes event listeners from children with multiple fragments', async () => {
         const fragmentRef = React.createRef();
         const nestedFragmentRef = React.createRef();
