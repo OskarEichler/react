@@ -318,12 +318,12 @@ function mapIntoArray(
             callback,
           );
         } catch (error) {
-          const iteratorReturn = iterator.return;
-          if (typeof iteratorReturn === 'function') {
-            try {
+          try {
+            const iteratorReturn = iterator.return;
+            if (typeof iteratorReturn === 'function') {
               iteratorReturn.call(iterator);
-            } catch (x) {}
-          }
+            }
+          } catch (x) {}
           throw error;
         }
       }
