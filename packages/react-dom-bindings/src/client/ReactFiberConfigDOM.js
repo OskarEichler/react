@@ -3236,7 +3236,7 @@ FragmentInstance.prototype.dispatchEvent = function (
         }
       }
       const tempParent = temp.parentNode;
-      if (tempParent != null) {
+      if (tempParent !== null) {
         tempParent.removeChild(temp);
       }
     }
